@@ -615,12 +615,13 @@ package body Aforth is
       Initial_Value : in Integer_32 := 0)
    is
    begin
-      Register (Name, (Kind => Number, Immediate => False, Value => Here.all));
       if Size = 4 then
+         Align;
          Store (Here.all ,Initial_Value);
       elsif Initial_Value /= 0 then
          raise Program_Error;
       end if;
+      Register (Name, (Kind => Number, Immediate => False, Value => Here.all));
       Here.all := Here.all + Size;
    end Make_Variable;
 
