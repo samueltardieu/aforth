@@ -530,9 +530,11 @@ package body Aforth is
             A : Action_Type;
             I : Integer_32;
          begin
-            Put_Line ("IN> = " & In_Ptr.all'Img);
+            Put_Line (">IN = " & IN_Ptr.all'Img);
             Put_Line ("TIB# = " & TIB_Count.all'Img);
             if W'Length = 0 then
+	       Put_Line ("END OF LINE");
+	       Put_Line (Word);
                pragma Assert (IN_Ptr.all >= TIB_Count.all);
                exit;
             end if;
@@ -647,12 +649,12 @@ package body Aforth is
       for I in IN_Ptr.all .. TIB_Count.all loop
          if Memory (TIB + I) = Char then
             Push (I - IN_Ptr.all);
-            In_Ptr.all := I + 1;
+            IN_Ptr.all := I + 1;
             return;
          end if;
       end loop;
       Push (TIB_Count.all - IN_Ptr.all);
-      In_Ptr.all := TIB_Count.all;
+      IN_Ptr.all := TIB_Count.all;
    end Parse;
 
    ----------------
@@ -1044,7 +1046,7 @@ package body Aforth is
          begin
             if C = Character'Val (32) or else C = Character'Val (9) then
                Push (A - IN_Ptr.all);
-               In_Ptr.all := A + 1;
+               IN_Ptr.all := A + 1;
                return;
             end if;
          end;
