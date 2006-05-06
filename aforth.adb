@@ -296,6 +296,7 @@ package body Aforth is
 
    procedure Drop is
       Value : constant Integer_32 := Pop;
+      pragma Unreferenced (Value);
    begin
       null;
    end Drop;
@@ -463,9 +464,7 @@ package body Aforth is
    -- Forth_Until --
    -----------------
 
-   procedure Forth_Until
-   is
-      Target : constant Integer_32 := Pop;
+   procedure Forth_Until is
    begin
       Literal;
       Add_To_Compilation_Buffer (Jump_If_False'Access);
