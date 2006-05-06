@@ -100,12 +100,15 @@ package Aforth is
    procedure Again;
    procedure Ahead;
    procedure Bl;
+   procedure Ccomma;
    procedure Cfetch;
    procedure Colon;
+   procedure Comma;
    procedure Compile_Mode;
    procedure Cr;
    procedure Depth;
    procedure Dot;
+   procedure DotQuote;
    procedure DotS;
    procedure Drop;
    procedure Dup;
@@ -115,11 +118,13 @@ package Aforth is
    procedure Forth_Else;
    procedure Forth_If;
    procedure Forth_Then;
+   procedure Forth_Type;
    procedure Forth_Until;
    procedure Immediate;
    procedure Interpret_Mode;
    procedure Literal;
    procedure Minus;
+   procedure Parse;
    procedure Plus;
    procedure Postpone;
    procedure Prompt;
@@ -129,6 +134,7 @@ package Aforth is
    procedure Semicolon;
    procedure Skip_Blanks;
    procedure Space;
+   procedure Squote;
    procedure Store;
    procedure Swap;
    procedure Times;
