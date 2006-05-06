@@ -52,6 +52,7 @@ package body Aforth is
 
    Current_Name   : String_Access;
    Current_Action : Action_Type (Forth_Word);
+   Current_IP     : Integer_32 := -1;
 
    procedure Start_Definition (Name : in String);
 
@@ -65,6 +66,13 @@ package body Aforth is
 
    function Word return String;
 
+   procedure Jump;
+   procedure Jump_If_False;
+   procedure Patch_Jump (To_Patch : in Integer_32; Target : in Integer_32);
+
+   procedure Add_To_Compilation_Buffer (Ada_Proc : in Ada_Word_Access);
+   procedure Add_To_Compilation_Buffer (Value : in Integer_32);
+
    -------------------------------
    -- Add_To_Compilation_Buffer --
    -------------------------------
@@ -74,6 +82,51 @@ package body Aforth is
       Compilation_Buffer (Compilation_Index) := Action;
       Compilation_Index := Compilation_Index + 1;
    end Add_To_Compilation_Buffer;
+
+   -------------------------------
+   -- Add_To_Compilation_Buffer --
+   -------------------------------
+
+   procedure Add_To_Compilation_Buffer (Ada_Proc : in Ada_Word_Access) is
+   begin
+      Add_To_Compilation_Buffer
+        (Action_Type'(Kind      => Ada_Word,
+                      Immediate => True,
+                      Ada_Proc  => Ada_Proc));
+   end Add_To_Compilation_Buffer;
+
+   -------------------------------
+   -- Add_To_Compilation_Buffer --
+   -------------------------------
+
+   procedure Add_To_Compilation_Buffer (Value : in Integer_32) is
+   begin
+      Add_To_Compilation_Buffer
+        (Action_Type'(Kind      => Number,
+                      Immediate => True,
+                      Value     => Value));
+   end Add_To_Compilation_Buffer;
+
+   -----------
+   -- Again --
+   -----------
+
+   procedure Again is
+   begin
+      Literal;
+      Add_To_Compilation_Buffer (Jump'Access);
+   end Again;
+
+   -----------
+   -- Ahead --
+   -----------
+
+   procedure Ahead is
+   begin
+      Push (Compilation_Index);
+      Add_To_Compilation_Buffer (0);
+      Add_To_Compilation_Buffer (Jump'Access);
+   end Ahead;
 
    --------
    -- Bl --
@@ -221,20 +274,22 @@ package body Aforth is
    ------------------------
 
    procedure Execute_Forth_Word (Addr : in Integer_32) is
-      Current_Address : Integer_32 := Addr;
    begin
+      Push (Return_Stack, Current_IP);
+      Current_IP := Addr;
       loop
          declare
-            Current_Action : Action_Type
-              renames Compilation_Buffer (Current_Address);
+            Current_Action : constant Action_Type :=
+              Compilation_Buffer (Current_IP);
          begin
+            Current_IP := Current_IP + 1;
             if Current_Action.Kind = Forth_Word and then
               Current_Action.Forth_Proc = -1
             then
-               exit;
+               Current_IP := Pop (Return_Stack);
+               return;
             end if;
             Execute_Action (Current_Action);
-            Current_Address := Current_Address + 1;
          end;
       end loop;
    end Execute_Forth_Word;
@@ -278,6 +333,58 @@ package body Aforth is
                        Name & " not found");
    end Find;
 
+   -----------------
+   -- Forth_Begin --
+   -----------------
+
+   procedure Forth_Begin is
+   begin
+      Push (Compilation_Index);
+   end Forth_Begin;
+
+   ----------------
+   -- Forth_Else --
+   ----------------
+
+   procedure Forth_Else is
+   begin
+      Ahead;
+      Swap;
+      Forth_Then;
+   end Forth_Else;
+
+   --------------
+   -- Forth_If --
+   --------------
+
+   procedure Forth_If is
+   begin
+      Push (Current_IP);
+      Add_To_Compilation_Buffer (0);
+      Add_To_Compilation_Buffer (Jump_If_False'Access);
+   end Forth_If;
+
+   ----------------
+   -- Forth_Then --
+   ----------------
+
+   procedure Forth_Then is
+   begin
+      Patch_Jump (To_Patch => Pop, Target => Compilation_Index);
+   end Forth_Then;
+
+   -----------------
+   -- Forth_Until --
+   -----------------
+
+   procedure Forth_Until
+   is
+      Target : constant Integer_32 := Pop;
+   begin
+      Literal;
+      Add_To_Compilation_Buffer (Jump_If_False'Access);
+   end Forth_Until;
+
    ---------------
    -- Immediate --
    ---------------
@@ -296,14 +403,34 @@ package body Aforth is
       State.all := 0;
    end Interpret_Mode;
 
+   ----------
+   -- Jump --
+   ----------
+
+   procedure Jump is
+   begin
+      Current_IP := Pop;
+   end Jump;
+
+   -------------------
+   -- Jump_If_False --
+   -------------------
+
+   procedure Jump_If_False is
+      Target : constant Integer_32 := Pop;
+   begin
+      if Pop = 0 then
+         Current_IP := Target;
+      end if;
+   end Jump_If_False;
+
    -------------
    -- Literal --
    -------------
 
    procedure Literal is
    begin
-      Add_To_Compilation_Buffer
-        (Action_Type'(Kind => Number, Immediate => True, Value => Pop));
+      Add_To_Compilation_Buffer (Pop);
    end Literal;
 
    ---------------
@@ -321,6 +448,7 @@ package body Aforth is
             if W'Length = 0 then
                exit;
             end if;
+            Put_Line ("Handling `" & W & "'");
             if State.all = 0 then
                begin
                   A := Find (Dict, W);
@@ -352,10 +480,7 @@ package body Aforth is
                         when Constraint_Error =>
                            Raise_Exception (Not_Found'Identity, W);
                      end;
-                     Add_To_Compilation_Buffer
-                       (Action_Type'(Kind      => Number,
-                                     Immediate => True,
-                                     Value     => I));
+                     Add_To_Compilation_Buffer (I);
                end;
             end if;
          end;
@@ -421,6 +546,15 @@ package body Aforth is
       Push (Pop - A);
    end Minus;
 
+   ----------------
+   -- Patch_Jump --
+   ----------------
+
+   procedure Patch_Jump (To_Patch : in Integer_32; Target : in Integer_32) is
+   begin
+      Compilation_Buffer (To_Patch) .Value := Target;
+   end Patch_Jump;
+
    ----------
    -- Plus --
    ----------
@@ -480,10 +614,7 @@ package body Aforth is
    exception
       when Not_Found =>
          begin
-            Add_To_Compilation_Buffer
-              (Action_Type'(Kind      => Number,
-                            Immediate => False,
-                            Value     => Integer_32'Value (W)));
+            Add_To_Compilation_Buffer (Integer_32'Value (W));
          exception
             when Constraint_Error =>
                Raise_Exception (Not_Found'Identity, W);
@@ -805,6 +936,8 @@ begin
    Make_And_Remember_Variable ("STATE", State);
 
    --  Default Ada words
+   Register_Ada_Word ("AGAIN", Again'Access, Immediate => True);
+   Register_Ada_Word ("AHEAD", Ahead'Access, Immediate => True);
    Register_Ada_Word ("BL", Bl'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
    Register_Ada_Word (":", Colon'Access);
@@ -817,6 +950,11 @@ begin
    Register_Ada_Word (".S", DotS'Access);
    Register_Ada_Word ("EMIT", Emit'Access);
    Register_Ada_Word ("@", Fetch'Access);
+   Register_Ada_Word ("begin", Forth_Begin'Access, Immediate => True);
+   Register_Ada_Word ("else", Forth_Else'Access, Immediate => True);
+   Register_Ada_Word ("if", Forth_If'Access, Immediate => True);
+   Register_Ada_Word ("then", Forth_Then'Access, Immediate => True);
+   Register_Ada_Word ("until", Forth_Until'Access, Immediate => True);
    Register_Ada_Word ("IMMEDIATE", Immediate'Access);
    Register_Ada_Word ("[", Interpret_Mode'Access, Immediate => True);
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);

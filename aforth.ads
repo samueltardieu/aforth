@@ -97,6 +97,8 @@ package Aforth is
    procedure Add_To_Compilation_Buffer (Action : in Action_Type);
 
    --  Predefined Ada words
+   procedure Again;
+   procedure Ahead;
    procedure Bl;
    procedure Cfetch;
    procedure Colon;
@@ -109,6 +111,11 @@ package Aforth is
    procedure Dup;
    procedure Emit;
    procedure Fetch;
+   procedure Forth_Begin;
+   procedure Forth_Else;
+   procedure Forth_If;
+   procedure Forth_Then;
+   procedure Forth_Until;
    procedure Immediate;
    procedure Interpret_Mode;
    procedure Literal;
