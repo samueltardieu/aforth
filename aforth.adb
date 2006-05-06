@@ -128,6 +128,17 @@ package body Aforth is
       Add_To_Compilation_Buffer (Jump'Access);
    end Ahead;
 
+   -----------
+   -- Align --
+   -----------
+
+   procedure Align is
+   begin
+      if Here.all mod 4 /= 0 then
+         Here.all := Here.all + (4 - (Here.all mod 4));
+      end if;
+   end Align;
+
    --------
    -- Bl --
    --------
@@ -1071,6 +1082,7 @@ begin
    --  Default Ada words
    Register_Ada_Word ("AGAIN", Again'Access, Immediate => True);
    Register_Ada_Word ("AHEAD", Ahead'Access, Immediate => True);
+   Register_Ada_Word ("ALIGN", Align'Access);
    Register_Ada_Word ("BL", Bl'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
    Register_Ada_Word (":", Colon'Access);

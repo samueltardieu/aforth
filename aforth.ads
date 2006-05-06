@@ -99,6 +99,7 @@ package Aforth is
    --  Predefined Ada words
    procedure Again;
    procedure Ahead;
+   procedure Align;
    procedure Bl;
    procedure Ccomma;
    procedure Cfetch;
