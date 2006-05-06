@@ -7,7 +7,7 @@ PROGRAMS = test_aforth
 all:: $(PROGRAMS)
 
 install:: $(PROGRAMS)
-	cp $(PROGRAMS) /home/shix
+	rsync $(PROGRAMS) /home/shix
 
 test_aforth: never
 	$(GNATMAKE) $(GNATCFLAGS) test_aforth
