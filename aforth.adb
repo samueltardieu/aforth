@@ -218,6 +218,28 @@ package body Aforth is
    end Depth;
 
    ---------
+   -- Div --
+   ---------
+
+   procedure Div is
+      A : constant Integer_32 := Pop;
+   begin
+      Push (Pop / A);
+   end Div;
+
+   ------------
+   -- DivMod --
+   ------------
+
+   procedure DivMod is
+      B : constant Integer_32 := Pop;
+      A : constant Integer_32 := Pop;
+   begin
+      Push (A rem B);
+      Push (A / B);
+   end DivMod;
+
+   ---------
    -- Dot --
    ---------
 
@@ -397,6 +419,16 @@ package body Aforth is
       Add_To_Compilation_Buffer (0);
       Add_To_Compilation_Buffer (Jump_If_False'Access);
    end Forth_If;
+
+   ---------------
+   -- Forth_Mod --
+   ---------------
+
+   procedure Forth_Mod is
+      A : constant Integer_32 := Pop;
+   begin
+      Push (Pop mod A);
+   end Forth_Mod;
 
    ----------------
    -- Forth_Then --
@@ -821,6 +853,18 @@ package body Aforth is
       Var := Find (Dict, Name) .Value;
    end Remember_Variable;
 
+   -----------
+   -- Scale --
+   -----------
+
+   procedure Scale is
+      C : constant Integer_64 := Integer_64 (Pop);
+      B : constant Integer_64 := Integer_64 (Pop);
+      A : constant Integer_64 := Integer_64 (Pop);
+   begin
+      Push (Integer_32 (A * B / C));
+   end Scale;
+
    ---------------
    -- Semicolon --
    ---------------
@@ -1032,6 +1076,8 @@ begin
    Register_Ada_Word ("c,", Ccomma'Access);
    Register_Ada_Word (",", Comma'Access);
    Register_Ada_Word ("CR", Cr'Access);
+   Register_Ada_Word ("/", Div'Access);
+   Register_Ada_Word ("/MOD", DivMod'Access);
    Register_Ada_Word ("DROP", Drop'Access);
    Register_Ada_Word ("DUP", Dup'Access);
    Register_Ada_Word ("DEPTH", Depth'Access);
@@ -1043,6 +1089,7 @@ begin
    Register_Ada_Word ("begin", Forth_Begin'Access, Immediate => True);
    Register_Ada_Word ("else", Forth_Else'Access, Immediate => True);
    Register_Ada_Word ("if", Forth_If'Access, Immediate => True);
+   Register_Ada_Word ("mod", Forth_Mod'Access);
    Register_Ada_Word ("then", Forth_Then'Access, Immediate => True);
    Register_Ada_Word ("type", Forth_Type'Access);
    Register_Ada_Word ("until", Forth_Until'Access, Immediate => True);
@@ -1057,6 +1104,7 @@ begin
    Register_Ada_Word ("QUIT", Quit'Access);
    Register_Ada_Word ("RECURSE", Recurse'Access, Immediate => True);
    Register_Ada_Word ("REFILL", Refill'Access);
+   Register_Ada_Word ("*/", Scale'Access);
    Register_Ada_Word (";", Semicolon'Access, Immediate => True);
    Register_Ada_Word ("SKIP-BLANKS", Skip_Blanks'Access);
    Register_Ada_Word ("SPACE", Space'Access);

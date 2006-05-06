@@ -107,6 +107,8 @@ package Aforth is
    procedure Compile_Mode;
    procedure Cr;
    procedure Depth;
+   procedure Div;
+   procedure DivMod;
    procedure Dot;
    procedure DotQuote;
    procedure DotS;
@@ -117,6 +119,7 @@ package Aforth is
    procedure Forth_Begin;
    procedure Forth_Else;
    procedure Forth_If;
+   procedure Forth_Mod;
    procedure Forth_Then;
    procedure Forth_Type;
    procedure Forth_Until;
@@ -131,6 +134,7 @@ package Aforth is
    procedure Quit;
    procedure Recurse;
    procedure Refill;
+   procedure Scale;
    procedure Semicolon;
    procedure Skip_Blanks;
    procedure Space;
