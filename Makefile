@@ -10,7 +10,7 @@ install:: $(PROGRAMS)
 	cp $(PROGRAMS) /home/shix
 
 test_aforth: never
-	$(GNATMAKE) $(GNATCFLAGS) aforth
+	$(GNATMAKE) $(GNATCFLAGS) test_aforth
 
 clean:: never
 	$(RM) *.o *.ali *~ b~*.ad? $(PROGRAMS)
