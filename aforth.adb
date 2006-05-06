@@ -521,6 +521,9 @@ package body Aforth is
             I : Integer_32;
          begin
             if W'Length = 0 then
+               Put_Line ("IN> = " & In_Ptr.all'Img);
+               Put_Line ("TIB# = " & TIB_Count.all'Img);
+               pragma Assert (IN_Ptr.all >= TIB_Count.all);
                exit;
             end if;
             Put_Line ("Handling `" & W & "'");
@@ -900,7 +903,7 @@ package body Aforth is
          declare
             C : constant Character := Character'Val (Cfetch (B + A));
          begin
-            if C /= Character'Val (32) and C /= Character'Val (8) then
+            if C /= Character'Val (32) and then C /= Character'Val (9) then
                IN_Ptr.all := A;
                return;
             end if;
@@ -1028,7 +1031,7 @@ package body Aforth is
          declare
             C : constant Character := Character'Val (Cfetch (TIB + A));
          begin
-            if C = Character'Val (32) or C = Character'Val (8) then
+            if C = Character'Val (32) or else C = Character'Val (9) then
                Push (A - IN_Ptr.all);
                In_Ptr.all := A + 1;
                return;
@@ -1036,7 +1039,6 @@ package body Aforth is
          end;
       end loop;
       Push (TIB_Count.all - IN_Ptr.all);
-      IN_Ptr.all := TIB_Count.all;
    end Word;
 
    ----------
