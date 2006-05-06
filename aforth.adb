@@ -530,9 +530,9 @@ package body Aforth is
             A : Action_Type;
             I : Integer_32;
          begin
+            Put_Line ("IN> = " & In_Ptr.all'Img);
+            Put_Line ("TIB# = " & TIB_Count.all'Img);
             if W'Length = 0 then
-               Put_Line ("IN> = " & In_Ptr.all'Img);
-               Put_Line ("TIB# = " & TIB_Count.all'Img);
                pragma Assert (IN_Ptr.all >= TIB_Count.all);
                exit;
             end if;
@@ -1050,6 +1050,7 @@ package body Aforth is
          end;
       end loop;
       Push (TIB_Count.all - IN_Ptr.all);
+      IN_Ptr.all := TIB_Count.all;
    end Word;
 
    ----------
