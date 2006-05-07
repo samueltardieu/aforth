@@ -116,6 +116,7 @@ package Aforth is
    procedure Drop;
    procedure Dup;
    procedure Emit;
+   procedure Equal;
    procedure Fetch;
    procedure Forth_Begin;
    procedure Forth_Else;
@@ -128,6 +129,8 @@ package Aforth is
    procedure Interpret_Mode;
    procedure Literal;
    procedure Minus;
+   procedure Nip;
+   procedure Notequal;
    procedure Parse;
    procedure Plus;
    procedure Postpone;
@@ -143,6 +146,10 @@ package Aforth is
    procedure Store;
    procedure Swap;
    procedure Times;
+   procedure Twodrop;
+   procedure Twodup;
    procedure Word;
+   procedure Zeroequal;
+   procedure Zeronotequal;
 
 end Aforth;

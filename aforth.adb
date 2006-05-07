@@ -321,6 +321,19 @@ package body Aforth is
       Put (Character'Val (Pop));
    end Emit;
 
+   -----------
+   -- Equal --
+   -----------
+
+   procedure Equal is
+   begin
+      if Pop = Pop then
+         Push (-1);
+      else
+         Push (0);
+      end if;
+   end Equal;
+
    --------------------
    -- Execute_Action --
    --------------------
@@ -630,6 +643,30 @@ package body Aforth is
    begin
       Push (Pop - A);
    end Minus;
+
+   ---------
+   -- Nip --
+   ---------
+
+   procedure Nip is
+      A : constant Integer_32 := Pop;
+   begin
+      Drop;
+      Push (A);
+   end Nip;
+
+   --------------
+   -- Notequal --
+   --------------
+
+   procedure Notequal is
+   begin
+      if Pop = Pop then
+         Push (0);
+      else
+         Push (-1);
+      end if;
+   end Notequal;
 
    -----------
    -- Parse --
@@ -1025,6 +1062,30 @@ package body Aforth is
       return Result;
    end To_String;
 
+   -------------
+   -- Twodrop --
+   -------------
+
+   procedure Twodrop is
+   begin
+      Drop;
+      Drop;
+   end Twodrop;
+
+   ------------
+   -- Twodup --
+   ------------
+
+   procedure Twodup is
+      A : constant Integer_32 := Pop;
+      B : constant Integer_32 := Pop;
+   begin
+      Push (B);
+      Push (A);
+      Push (B);
+      Push (A);
+   end Twodup;
+
    ----------
    -- Word --
    ----------
@@ -1057,6 +1118,32 @@ package body Aforth is
       Word;
       return To_String;
    end Word;
+
+   ---------------
+   -- Zeroequal --
+   ---------------
+
+   procedure Zeroequal is
+   begin
+      if Pop = 0 then
+         Push (-1);
+      else
+         Push (0);
+      end if;
+   end Zeroequal;
+
+   ------------------
+   -- Zeronotequal --
+   ------------------
+
+   procedure Zeronotequal is
+   begin
+      if Pop = 0 then
+         Push (0);
+      else
+         Push (-1);
+      end if;
+   end Zeronotequal;
 
 begin
    Data_Stack   := new Stack_Type;
@@ -1095,6 +1182,7 @@ begin
    Register_Ada_Word (".""", DotQuote'Access, Immediate => True);
    Register_Ada_Word (".S", DotS'Access);
    Register_Ada_Word ("EMIT", Emit'Access);
+   Register_Ada_Word ("=", Equal'Access);
    Register_Ada_Word ("@", Fetch'Access);
    Register_Ada_Word ("begin", Forth_Begin'Access, Immediate => True);
    Register_Ada_Word ("else", Forth_Else'Access, Immediate => True);
@@ -1107,6 +1195,8 @@ begin
    Register_Ada_Word ("[", Interpret_Mode'Access, Immediate => True);
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
    Register_Ada_Word ("-", Minus'Access);
+   Register_Ada_Word ("NIP", Nip'Access);
+   Register_Ada_Word ("<>", Notequal'Access);
    Register_Ada_Word ("+", Plus'Access);
    Register_Ada_Word ("PARSE", Parse'Access);
    Register_Ada_Word ("POSTPONE", Postpone'Access, Immediate => True);
@@ -1122,5 +1212,9 @@ begin
    Register_Ada_Word ("SWAP", Swap'Access);
    Register_Ada_Word ("!", Store'Access);
    Register_Ada_Word ("*", Times'Access);
+   Register_Ada_Word ("2DROP", Twodrop'Access);
+   Register_Ada_Word ("2DUP", Twodup'Access);
    Register_Ada_Word ("WORD", Word'Access);
+   Register_Ada_Word ("0=", Zeroequal'Access);
+   Register_Ada_Word ("0<>", Zeronotequal'Access);
 end Aforth;
