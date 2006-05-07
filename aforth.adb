@@ -115,6 +115,7 @@ package body Aforth is
    begin
       Literal;
       Add_To_Compilation_Buffer (Jump'Access);
+      Drop;
    end Again;
 
    -----------
@@ -420,6 +421,7 @@ package body Aforth is
 
    procedure Forth_Begin is
    begin
+      Push (-1);
       Push (Compilation_Index);
    end Forth_Begin;
 
@@ -482,6 +484,18 @@ package body Aforth is
       Literal;
       Add_To_Compilation_Buffer (Jump_If_False'Access);
    end Forth_Until;
+
+   -----------------
+   -- Forth_While --
+   -----------------
+
+   procedure Forth_While is
+   begin
+      Push (Compilation_Index);
+      Swap;
+      Add_To_Compilation_Buffer (0);
+      Add_To_Compilation_Buffer (Jump_If_False'Access);
+   end Forth_While;
 
    ---------------
    -- Immediate --
@@ -900,6 +914,24 @@ package body Aforth is
       Var := Find (Dict, Name) .Value;
    end Remember_Variable;
 
+   ------------
+   -- Repeat --
+   ------------
+
+   procedure Repeat is
+   begin
+      Literal;
+      Add_To_Compilation_Buffer (Jump'Access);
+      loop
+         declare
+            To_Fix : constant Integer_32 := Pop;
+         begin
+            exit when To_Fix = -1;
+            Patch_Jump (To_Fix, Compilation_Index);
+         end;
+      end loop;
+   end Repeat;
+
    -----------
    -- Scale --
    -----------
@@ -1191,6 +1223,7 @@ begin
    Register_Ada_Word ("then", Forth_Then'Access, Immediate => True);
    Register_Ada_Word ("type", Forth_Type'Access);
    Register_Ada_Word ("until", Forth_Until'Access, Immediate => True);
+   Register_Ada_Word ("while", Forth_While'Access, Immediate => True);
    Register_Ada_Word ("IMMEDIATE", Immediate'Access);
    Register_Ada_Word ("[", Interpret_Mode'Access, Immediate => True);
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
@@ -1204,6 +1237,7 @@ begin
    Register_Ada_Word ("QUIT", Quit'Access);
    Register_Ada_Word ("RECURSE", Recurse'Access, Immediate => True);
    Register_Ada_Word ("REFILL", Refill'Access);
+   Register_Ada_Word ("REPEAT", Repeat'Access, Immediate => True);
    Register_Ada_Word ("*/", Scale'Access);
    Register_Ada_Word (";", Semicolon'Access, Immediate => True);
    Register_Ada_Word ("SKIP-BLANKS", Skip_Blanks'Access);
