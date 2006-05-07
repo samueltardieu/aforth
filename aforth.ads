@@ -125,7 +125,7 @@ package Aforth is
    procedure Forth_Then;
    procedure Forth_Type;
    procedure Forth_Until;
-   procedure Forth_While,
+   procedure Forth_While;
    procedure Immediate;
    procedure Interpret_Mode;
    procedure Literal;
