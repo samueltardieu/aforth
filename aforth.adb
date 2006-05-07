@@ -161,11 +161,11 @@ package body Aforth is
    -- Cfetch --
    ------------
 
-   function Cfetch (Addr : Integer_32) Return Unsigned_8 is
+   function Cfetch (Addr : Integer_32) return Integer_32 is
    begin
       Push (Addr);
       Cfetch;
-      return Unsigned_8 (Pop);
+      return Pop;
    end Cfetch;
 
    ------------------
@@ -530,18 +530,9 @@ package body Aforth is
             A : Action_Type;
             I : Integer_32;
          begin
-            Put_Line (">IN = " & IN_Ptr.all'Img);
-            Put_Line ("TIB# = " & TIB_Count.all'Img);
             if W'Length = 0 then
-	       Put_Line ("END OF LINE");
-	       Put_Line (W);
-	       for I in IN_Ptr.all .. TIB_Count.all loop
-	          Put_Line (I'Img & ":" & Memory (TIB + I)'Img);
-	       end loop;
-               pragma Assert (IN_Ptr.all >= TIB_Count.all);
                exit;
             end if;
-            Put_Line ("Handling `" & W & "'");
             if State.all = 0 then
                begin
                   A := Find (Dict, W);
@@ -913,11 +904,10 @@ package body Aforth is
    -----------------
 
    procedure Skip_Blanks is
-      B : constant Integer_32 := TIB + IN_Ptr.all;
    begin
       for A in IN_Ptr.all .. TIB_Count.all - 1 loop
          declare
-            C : constant Character := Character'Val (Cfetch (B + A));
+            C : constant Character := Character'Val (Cfetch (TIB + A));
          begin
             if C /= Character'Val (32) and then C /= Character'Val (9) then
                IN_Ptr.all := A;

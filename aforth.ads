@@ -78,7 +78,7 @@ package Aforth is
    Memory : Byte_Array (0 .. 65535) := (others => 0);
 
    function Fetch (Addr : Integer_32) return Integer_32;
-   function CFetch (Addr : Integer_32) return Unsigned_8;
+   function CFetch (Addr : Integer_32) return Integer_32;
    procedure Store (Addr : in Integer_32; Value : in Integer_32);
 
    procedure Make_Variable
