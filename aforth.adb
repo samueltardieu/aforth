@@ -534,7 +534,10 @@ package body Aforth is
             Put_Line ("TIB# = " & TIB_Count.all'Img);
             if W'Length = 0 then
 	       Put_Line ("END OF LINE");
-	       Put_Line (Word);
+	       Put_Line (W);
+	       for I in IN_Ptr.all .. TIB_Count.all loop
+	          Put_Line (I'Img & ":" & Memory (TIB + I)'Img);
+	       end loop;
                pragma Assert (IN_Ptr.all >= TIB_Count.all);
                exit;
             end if;
