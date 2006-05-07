@@ -220,6 +220,16 @@ package body Aforth is
       Emit;
    end Cr;
 
+   ------------
+   -- Cstore --
+   ------------
+
+   procedure Cstore is
+      Addr : constant Integer_32 := Pop;
+   begin
+      Memory (Addr) := Unsigned_8 (Pop);
+   end Cstore;
+
    -----------
    -- Depth --
    -----------
@@ -1200,9 +1210,10 @@ begin
    Register_Ada_Word ("ALIGN", Align'Access);
    Register_Ada_Word ("BL", Bl'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
+   Register_Ada_Word ("C!", Cstore'Access);
    Register_Ada_Word (":", Colon'Access);
    Register_Ada_Word ("]", Compile_Mode'Access);
-   Register_Ada_Word ("c,", Ccomma'Access);
+   Register_Ada_Word ("C,", Ccomma'Access);
    Register_Ada_Word (",", Comma'Access);
    Register_Ada_Word ("CR", Cr'Access);
    Register_Ada_Word ("/", Div'Access);
