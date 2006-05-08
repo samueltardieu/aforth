@@ -150,6 +150,16 @@ package body Aforth is
    end Bl;
 
    ------------
+   -- Bounds --
+   ------------
+
+   procedure Bounds is
+   begin
+      Over;
+      Plus;
+   end Bounds;
+
+   ------------
    -- Cfetch --
    ------------
 
@@ -168,6 +178,15 @@ package body Aforth is
       Cfetch;
       return Pop;
    end Cfetch;
+
+   ----------
+   -- Char --
+   ----------
+
+   procedure Char is
+   begin
+      Push (Character'Pos (Word (1)));
+   end Char;
 
    ------------------
    -- Compile_Mode --
@@ -507,6 +526,46 @@ package body Aforth is
       Add_To_Compilation_Buffer (Jump_If_False'Access);
    end Forth_While;
 
+   -------------
+   -- Greater --
+   -------------
+
+   procedure Greater is
+      B : constant Integer_32 := Pop;
+      A : constant Integer_32 := Pop;
+   begin
+      if A > B then
+         Push (-1);
+      else
+         Push (0);
+      end if;
+   end Greater;
+
+   ------------------
+   -- Greaterequal --
+   ------------------
+
+   procedure Greaterequal is
+      B : constant Integer_32 := Pop;
+      A : constant Integer_32 := Pop;
+   begin
+      if A >= B then
+         Push (-1);
+      else
+         Push (0);
+      end if;
+   end Greaterequal;
+
+   -----------
+   -- Ichar --
+   -----------
+
+   procedure Ichar is
+   begin
+      Char;
+      Literal;
+   end Ichar;
+
    ---------------
    -- Immediate --
    ---------------
@@ -668,6 +727,17 @@ package body Aforth is
       Push (Pop - A);
    end Minus;
 
+   ----------------
+   -- Minusstore --
+   ----------------
+
+   procedure Minusstore is
+      Addr : constant Integer_32 := Pop;
+      Cst  : constant Integer_32 := Pop;
+   begin
+      Store (Addr, Fetch (Addr) - Cst);
+   end Minusstore;
+
    ---------
    -- Nip --
    ---------
@@ -691,6 +761,37 @@ package body Aforth is
          Push (-1);
       end if;
    end Notequal;
+
+   --------------
+   -- Oneminus --
+   --------------
+
+   procedure Oneminus is
+   begin
+      Push (Pop - 1);
+   end Oneminus;
+
+   -------------
+   -- Oneplus --
+   -------------
+
+   procedure Oneplus is
+   begin
+      Push (Pop + 1);
+   end Oneplus;
+
+   ----------
+   -- Over --
+   ----------
+
+   procedure Over is
+      A : constant Integer_32 := Pop;
+      B : constant Integer_32 := Pop;
+   begin
+      Push (B);
+      Push (A);
+      Push (B);
+   end Over;
 
    -----------
    -- Parse --
@@ -729,6 +830,17 @@ package body Aforth is
    begin
       Push (Pop + Pop);
    end Plus;
+
+   ---------------
+   -- Plusstore --
+   ---------------
+
+   procedure Plusstore is
+      Addr : constant Integer_32 := Pop;
+      Cst  : constant Integer_32 := Pop;
+   begin
+      Store (Addr, Fetch (Addr) + Cst);
+   end Plusstore;
 
    ---------
    -- Pop --
@@ -997,6 +1109,36 @@ package body Aforth is
       IN_Ptr.all := TIB_Count.all;
    end Skip_Blanks;
 
+   -------------
+   -- Smaller --
+   -------------
+
+   procedure Smaller is
+      B : constant Integer_32 := Pop;
+      A : constant Integer_32 := Pop;
+   begin
+      if A < B then
+         Push (-1);
+      else
+         Push (0);
+      end if;
+   end Smaller;
+
+   ------------------
+   -- Smallerequal --
+   ------------------
+
+   procedure Smallerequal is
+      B : constant Integer_32 := Pop;
+      A : constant Integer_32 := Pop;
+   begin
+      if A <= B then
+         Push (-1);
+      else
+         Push (0);
+      end if;
+   end Smallerequal;
+
    -----------
    -- Space --
    -----------
@@ -1209,6 +1351,8 @@ begin
    Register_Ada_Word ("AHEAD", Ahead'Access, Immediate => True);
    Register_Ada_Word ("ALIGN", Align'Access);
    Register_Ada_Word ("BL", Bl'Access);
+   Register_Ada_Word ("BOUNDS", Bounds'Access);
+   Register_Ada_Word ("CHAR", Char'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
    Register_Ada_Word ("C!", Cstore'Access);
    Register_Ada_Word (":", Colon'Access);
@@ -1227,22 +1371,30 @@ begin
    Register_Ada_Word ("EMIT", Emit'Access);
    Register_Ada_Word ("=", Equal'Access);
    Register_Ada_Word ("@", Fetch'Access);
-   Register_Ada_Word ("begin", Forth_Begin'Access, Immediate => True);
-   Register_Ada_Word ("else", Forth_Else'Access, Immediate => True);
-   Register_Ada_Word ("if", Forth_If'Access, Immediate => True);
-   Register_Ada_Word ("mod", Forth_Mod'Access);
-   Register_Ada_Word ("then", Forth_Then'Access, Immediate => True);
-   Register_Ada_Word ("type", Forth_Type'Access);
-   Register_Ada_Word ("until", Forth_Until'Access, Immediate => True);
-   Register_Ada_Word ("while", Forth_While'Access, Immediate => True);
+   Register_Ada_Word ("BEGIN", Forth_Begin'Access, Immediate => True);
+   Register_Ada_Word ("ELSE", Forth_Else'Access, Immediate => True);
+   Register_Ada_Word ("[CHAR]", Ichar'Access, Immediate => True);
+   Register_Ada_Word ("IF", Forth_If'Access, Immediate => True);
+   Register_Ada_Word ("MOD", Forth_Mod'Access);
+   Register_Ada_Word ("THEN", Forth_Then'Access, Immediate => True);
+   Register_Ada_Word ("TYPE", Forth_Type'Access);
+   Register_Ada_Word ("UNTIL", Forth_Until'Access, Immediate => True);
+   Register_Ada_Word ("WHILE", Forth_While'Access, Immediate => True);
+   Register_Ada_Word (">", Greater'Access);
+   Register_Ada_Word (">=", Greaterequal'Access);
    Register_Ada_Word ("IMMEDIATE", Immediate'Access);
    Register_Ada_Word ("[", Interpret_Mode'Access, Immediate => True);
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
    Register_Ada_Word ("-", Minus'Access);
+   Register_Ada_Word ("-!", Minus'Access);
    Register_Ada_Word ("NIP", Nip'Access);
    Register_Ada_Word ("<>", Notequal'Access);
-   Register_Ada_Word ("+", Plus'Access);
+   Register_Ada_Word ("1-", Oneminus'Access);
+   Register_Ada_Word ("1+", Oneplus'Access);
+   Register_Ada_Word ("OVER", Over'Access);
    Register_Ada_Word ("PARSE", Parse'Access);
+   Register_Ada_Word ("+", Plus'Access);
+   Register_Ada_Word ("+!", Plusstore'Access);
    Register_Ada_Word ("POSTPONE", Postpone'Access, Immediate => True);
    Register_Ada_Word ("PROMPT", Prompt'Access);
    Register_Ada_Word ("QUIT", Quit'Access);
@@ -1252,8 +1404,10 @@ begin
    Register_Ada_Word ("*/", Scale'Access);
    Register_Ada_Word (";", Semicolon'Access, Immediate => True);
    Register_Ada_Word ("SKIP-BLANKS", Skip_Blanks'Access);
+   Register_Ada_Word ("<", Smaller'Access);
+   Register_Ada_Word ("<=", Smallerequal'Access);
    Register_Ada_Word ("SPACE", Space'Access);
-   Register_Ada_Word ("s""", Squote'Access, Immediate => True);
+   Register_Ada_Word ("S""", Squote'Access, Immediate => True);
    Register_Ada_Word ("SWAP", Swap'Access);
    Register_Ada_Word ("!", Store'Access);
    Register_Ada_Word ("*", Times'Access);
