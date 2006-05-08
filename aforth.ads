@@ -64,6 +64,7 @@ package Aforth is
    --  May raise stack underflow
 
    procedure Push (X : in Integer_32);
+   procedure Push (B : in Boolean);
    function Pop return Integer_32;
    --  Shortcut operating on Data_Stack
 
@@ -165,6 +166,8 @@ package Aforth is
    procedure Twodup;
    procedure Word;
    procedure Zeroequal;
+   procedure Zerogreater;
    procedure Zeronotequal;
+   procedure Zerosmaller;
 
 end Aforth;

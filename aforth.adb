@@ -357,11 +357,7 @@ package body Aforth is
 
    procedure Equal is
    begin
-      if Pop = Pop then
-         Push (-1);
-      else
-         Push (0);
-      end if;
+      Push (Pop = Pop);
    end Equal;
 
    --------------------
@@ -532,13 +528,8 @@ package body Aforth is
 
    procedure Greater is
       B : constant Integer_32 := Pop;
-      A : constant Integer_32 := Pop;
    begin
-      if A > B then
-         Push (-1);
-      else
-         Push (0);
-      end if;
+      Push (Pop > B);
    end Greater;
 
    ------------------
@@ -547,13 +538,8 @@ package body Aforth is
 
    procedure Greaterequal is
       B : constant Integer_32 := Pop;
-      A : constant Integer_32 := Pop;
    begin
-      if A >= B then
-         Push (-1);
-      else
-         Push (0);
-      end if;
+      Push (Pop >= B);
    end Greaterequal;
 
    -----------
@@ -755,11 +741,7 @@ package body Aforth is
 
    procedure Notequal is
    begin
-      if Pop = Pop then
-         Push (0);
-      else
-         Push (-1);
-      end if;
+      Push (Pop /= Pop);
    end Notequal;
 
    --------------
@@ -919,6 +901,19 @@ package body Aforth is
    procedure Push (X : in Integer_32) is
    begin
       Push (Data_Stack, X);
+   end Push;
+
+   ----------
+   -- Push --
+   ----------
+
+   procedure Push (B : in Boolean) is
+   begin
+      if B then
+         Push (-1);
+      else
+         Push (0);
+      end if;
    end Push;
 
    ----------
@@ -1115,13 +1110,8 @@ package body Aforth is
 
    procedure Smaller is
       B : constant Integer_32 := Pop;
-      A : constant Integer_32 := Pop;
    begin
-      if A < B then
-         Push (-1);
-      else
-         Push (0);
-      end if;
+      Push (Pop < B);
    end Smaller;
 
    ------------------
@@ -1130,13 +1120,8 @@ package body Aforth is
 
    procedure Smallerequal is
       B : constant Integer_32 := Pop;
-      A : constant Integer_32 := Pop;
    begin
-      if A <= B then
-         Push (-1);
-      else
-         Push (0);
-      end if;
+      Push (Pop <= B);
    end Smallerequal;
 
    -----------
@@ -1309,12 +1294,26 @@ package body Aforth is
 
    procedure Zeroequal is
    begin
-      if Pop = 0 then
-         Push (-1);
-      else
-         Push (0);
-      end if;
+      Push (Pop = 0);
    end Zeroequal;
+
+   -----------------
+   -- Zerogreater --
+   -----------------
+
+   procedure Zerogreater is
+   begin
+      Push (Pop > 0);
+   end Zerogreater;
+
+   ----------------------
+   -- Zerogreaterequal --
+   ----------------------
+
+   procedure Zerogreaterequal is
+   begin
+      Push (Pop >= 0);
+   end Zerogreaterequal;
 
    ------------------
    -- Zeronotequal --
@@ -1322,12 +1321,26 @@ package body Aforth is
 
    procedure Zeronotequal is
    begin
-      if Pop = 0 then
-         Push (0);
-      else
-         Push (-1);
-      end if;
+      Push (Pop /= 0);
    end Zeronotequal;
+
+   -----------------
+   -- Zerosmaller --
+   -----------------
+
+   procedure Zerosmaller is
+   begin
+      Push (Pop < 0);
+   end Zerosmaller;
+
+   ----------------------
+   -- Zerosmallerequal --
+   ----------------------
+
+   procedure Zerosmallerequal is
+   begin
+      Push (Pop <= 0);
+   end Zerosmallerequal;
 
 begin
    Data_Stack   := new Stack_Type;
@@ -1415,5 +1428,9 @@ begin
    Register_Ada_Word ("2DUP", Twodup'Access);
    Register_Ada_Word ("WORD", Word'Access);
    Register_Ada_Word ("0=", Zeroequal'Access);
+   Register_Ada_Word ("0>", Zerogreater'Access);
+   Register_Ada_Word ("0>=", Zerogreaterequal'Access);
    Register_Ada_Word ("0<>", Zeronotequal'Access);
+   Register_Ada_Word ("0<", Zerosmaller'Access);
+   Register_Ada_Word ("0<=", Zerosmallerequal'Access);
 end Aforth;
