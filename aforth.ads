@@ -134,6 +134,7 @@ package Aforth is
    procedure Greaterequal;
    procedure Ichar;
    procedure Immediate;
+   procedure Include;
    procedure Interpret_Mode;
    procedure Literal;
    procedure Minus;

@@ -1,6 +1,5 @@
 with Ada.Characters.Handling;    use Ada.Characters.Handling;
 with Ada.Exceptions;             use Ada.Exceptions;
-with Ada.IO_Exceptions;          use Ada.IO_Exceptions;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
@@ -22,6 +21,8 @@ package body Aforth is
 
    procedure Free is
       new Ada.Unchecked_Deallocation (String, String_Access);
+
+   Already_Handled : exception;
 
    Here      : Integer_32_Access;
    Base      : Integer_32_Access;
@@ -62,7 +63,8 @@ package body Aforth is
 
    procedure Execute_Forth_Word (Addr : in Integer_32);
 
-   procedure Main_Loop;
+   procedure Interpret;
+   procedure Main_Loop (Display_Prompt : Boolean := False);
 
    function Word return String;
 
@@ -561,6 +563,43 @@ package body Aforth is
       Set_Last_Immediate (Dict);
    end Immediate;
 
+   -------------
+   -- Include --
+   -------------
+
+   procedure Include is
+      Previous_Input : constant File_Access := Current_Input;
+      File_Name      : constant String      := Word;
+      File           : File_Type;
+      Old_TIB_Count  : constant Integer_32  := TIB_Count.all;
+      Old_IN_Ptr     : constant Integer_32  := IN_Ptr.all;
+      Old_TIB        : constant Byte_Array  :=
+        Memory (TIB .. TIB + Old_TIB_Count - 1);
+   begin
+      begin
+         Open (File, In_File, File_Name);
+      exception
+         when Name_Error =>
+            Put_Line ("*** File not found: " & File_Name);
+            raise Already_Handled;
+      end;
+      Set_Input (File);
+      begin
+         Main_Loop;
+      exception
+         when End_Error =>
+            Close (File);
+            Set_Input (Previous_Input.all);
+            Memory (TIB .. TIB + Old_TIB_Count - 1) := Old_TIB;
+            TIB_Count.all := Old_TIB_Count;
+            IN_Ptr.all := Old_IN_Ptr;
+         when others =>
+            Close (File);
+            Set_Input (Previous_Input.all);
+            raise;
+      end;
+   end Include;
+
    --------------------
    -- Interpret_Mode --
    --------------------
@@ -601,10 +640,10 @@ package body Aforth is
    end Literal;
 
    ---------------
-   -- Main_Loop --
+   -- Interpret --
    ---------------
 
-   procedure Main_Loop is
+   procedure Interpret is
    begin
       loop
          declare
@@ -650,6 +689,28 @@ package body Aforth is
                end;
             end if;
          end;
+      end loop;
+   end Interpret;
+
+   ---------------
+   -- Main_Loop --
+   ---------------
+
+   procedure Main_Loop (Display_Prompt : Boolean := False) is
+   begin
+      loop
+         if Display_Prompt then
+            if State.all = 0 then
+               New_Line;
+               Put ("ok> ");
+               Flush;
+            else
+               Put ("] ");
+               Flush;
+            end if;
+         end if;
+         Refill;
+         Interpret;
       end loop;
    end Main_Loop;
 
@@ -927,13 +988,9 @@ package body Aforth is
          Return_Stack.Top := 0;
          Interpret_Mode;
          begin
-            loop
-               Prompt;
-               Refill;
-               Main_Loop;
-            end loop;
+            Main_Loop (Display_Prompt => True);
          exception
-            when Ada.Io_Exceptions.End_Error =>
+            when End_Error =>
                return;
             when NF : Not_Found =>
                Put_Line ("*** Word not found: " & Exception_Message (NF));
@@ -941,6 +998,8 @@ package body Aforth is
                Put_Line ("*** Stack overflow");
             when Stack_Underflow =>
                Put_Line ("*** Stack underflow");
+            when Already_Handled =>
+               null;
             when E : others =>
                Put_Line ("*** Exception " & Exception_Name (E) &
                          " with message " &
@@ -1396,6 +1455,7 @@ begin
    Register_Ada_Word (">", Greater'Access);
    Register_Ada_Word (">=", Greaterequal'Access);
    Register_Ada_Word ("IMMEDIATE", Immediate'Access);
+   Register_Ada_Word ("INCLUDE", Include'Access);
    Register_Ada_Word ("[", Interpret_Mode'Access, Immediate => True);
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
    Register_Ada_Word ("-", Minus'Access);
