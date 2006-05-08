@@ -471,7 +471,7 @@ package body Aforth is
 
    procedure Forth_If is
    begin
-      Push (Current_IP);
+      Push (Compilation_Index);
       Add_To_Compilation_Buffer (0);
       Add_To_Compilation_Buffer (Jump_If_False'Access);
    end Forth_If;
