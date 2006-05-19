@@ -3,6 +3,7 @@ with Ada.Exceptions;             use Ada.Exceptions;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
+with Read_Line;
 
 package body Aforth is
 
@@ -1024,11 +1025,10 @@ package body Aforth is
    ------------
 
    procedure Refill is
-      Buffer : String (1 .. 1024);
-      Last   : Natural;
+      Buffer : constant String  := Read_Line;
+      Last   : constant Natural := Natural'Min (Buffer'Length, 1024);
    begin
-      Get_Line (Buffer, Last);
-      for I in 1 .. Last loop
+      for I in 1 .. Integer'Min (Buffer'Length, 1024) loop
          Memory (TIB + Integer_32 (I) - 1) := Character'Pos (Buffer (I));
       end loop;
       TIB_Count.all := Integer_32 (Last);
