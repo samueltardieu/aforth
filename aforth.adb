@@ -17,8 +17,10 @@ package body Aforth is
 
    type Integer_32_Access is access all Integer_32;
 
+   pragma Warnings (Off);
    function To_Integer_32_Access is
       new Ada.Unchecked_Conversion (Byte_Access, Integer_32_Access);
+   pragma Warnings (On);
 
    procedure Free is
       new Ada.Unchecked_Deallocation (String, String_Access);
@@ -226,7 +228,9 @@ package body Aforth is
 
    procedure Comma is
    begin
+      pragma Warnings (Off);
       To_Integer_32_Access (Memory (Here.all) 'Access) .all := Pop;
+      pragma Warnings (On);
       Here.all := Here.all + 4;
    end Comma;
 
@@ -409,8 +413,10 @@ package body Aforth is
    -----------
 
    procedure Fetch is
+      pragma Warnings (Off);
       Addr  : constant Integer_32_Access :=
         To_Integer_32_Access (Memory (Pop)'Access);
+      pragma Warnings (On);
    begin
       Push (Addr.all);
    end Fetch;
@@ -1084,7 +1090,9 @@ package body Aforth is
       Var  : out Integer_32_Access)
    is
    begin
+      pragma Warnings (Off);
       Var := To_Integer_32_Access (Memory (Find (Dict, Name) .Value) 'Access);
+      pragma Warnings (On);
    end Remember_Variable;
 
    -----------------------
@@ -1244,8 +1252,10 @@ package body Aforth is
 
    procedure Store
    is
+      pragma Warnings (Off);
       Addr  : constant Integer_32_Access :=
         To_Integer_32_Access (Memory (Pop)'Access);
+      pragma Warnings (On);
    begin
       Addr.all := Pop;
    end Store;
