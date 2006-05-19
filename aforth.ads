@@ -97,6 +97,8 @@ package Aforth is
 
    procedure Add_To_Compilation_Buffer (Action : in Action_Type);
 
+   procedure Include_File (File_Name : in String);
+
    --  Predefined Ada words
    procedure Again;
    procedure Ahead;

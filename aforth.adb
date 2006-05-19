@@ -569,8 +569,17 @@ package body Aforth is
    -------------
 
    procedure Include is
+   begin
+      Include_File (Word);
+   end Include;
+
+   ------------------
+   -- Include_File --
+   ------------------
+
+   procedure Include_File (File_Name : in String)
+   is
       Previous_Input : constant File_Access := Current_Input;
-      File_Name      : constant String      := Word;
       File           : File_Type;
       Old_TIB_Count  : constant Integer_32  := TIB_Count.all;
       Old_IN_Ptr     : constant Integer_32  := IN_Ptr.all;
@@ -599,7 +608,7 @@ package body Aforth is
             Set_Input (Previous_Input.all);
             raise;
       end;
-   end Include;
+   end Include_File;
 
    --------------------
    -- Interpret_Mode --
