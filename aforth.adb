@@ -1,5 +1,6 @@
 with Ada.Characters.Handling;    use Ada.Characters.Handling;
 with Ada.Exceptions;             use Ada.Exceptions;
+with Ada.Real_Time;              use Ada.Real_Time;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
@@ -786,6 +787,14 @@ package body Aforth is
       Store (Addr, Fetch (Addr) - Cst);
    end Minusstore;
 
+   --------
+   -- Ms --
+   --------
+
+   procedure Ms is
+   begin
+      delay until Clock + To_Time_Span (Duration (Float (Pop) / 1000.0));
+   end Ms;
    ---------
    -- Nip --
    ---------
@@ -1478,6 +1487,7 @@ begin
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
    Register_Ada_Word ("-", Minus'Access);
    Register_Ada_Word ("-!", Minus'Access);
+   Register_Ada_Word ("MS", Ms'Access);
    Register_Ada_Word ("NIP", Nip'Access);
    Register_Ada_Word ("<>", Notequal'Access);
    Register_Ada_Word ("1-", Oneminus'Access);

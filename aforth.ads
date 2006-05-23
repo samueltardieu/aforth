@@ -159,6 +159,7 @@ package Aforth is
    procedure Literal;
    procedure Minus;
    procedure Minusstore;
+   procedure Ms;
    procedure Nip;
    procedure Notequal;
    procedure Oneminus;
