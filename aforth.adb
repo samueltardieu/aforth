@@ -15,8 +15,6 @@ package body Aforth is
 
    type Byte_Access is access all Unsigned_8;
 
-   type Integer_32_Access is access all Integer_32;
-
    pragma Warnings (Off);
    function To_Integer_32_Access is
       new Ada.Unchecked_Conversion (Byte_Access, Integer_32_Access);
@@ -41,18 +39,6 @@ package body Aforth is
    procedure Remember_Variable
      (Name : in String;
       Var  : out Integer_32);
-
-   procedure Make_And_Remember_Variable
-     (Name          : in String;
-      Var           : out Integer_32_Access;
-      Size          : in Integer_32 := 4;
-      Initial_Value : in Integer_32 := 0);
-
-   procedure Make_And_Remember_Variable
-     (Name          : in String;
-      Var           : out Integer_32;
-      Size          : in Integer_32 := 4;
-      Initial_Value : in Integer_32 := 0);
 
    Current_Name   : String_Access;
    Current_Action : Action_Type (Forth_Word);
@@ -209,7 +195,6 @@ package body Aforth is
    procedure Colon is
    begin
       Start_Definition (Word);
-      Compile_Mode;
    end Colon;
 
    ------------
@@ -1082,6 +1067,20 @@ package body Aforth is
    end Register_Ada_Word;
 
    -----------------------
+   -- Register_Constant --
+   -----------------------
+
+   procedure Register_Constant
+     (Name  : in String;
+      Value : in Integer_32)
+   is
+   begin
+      Start_Definition (Name);
+      Add_To_Compilation_Buffer (Value);
+      Semicolon;
+   end Register_Constant;
+
+   -----------------------
    -- Remember_Variable --
    -----------------------
 
@@ -1243,7 +1242,7 @@ package body Aforth is
       Current_Name              := new String'(Name);
       Current_Action.Immediate  := False;
       Current_Action.Forth_Proc := Compilation_Index;
-      State.all                 := 1;
+      Compile_Mode;
    end Start_Definition;
 
    -----------

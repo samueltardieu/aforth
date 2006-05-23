@@ -78,6 +78,20 @@ package Aforth is
 
    Memory : Byte_Array (0 .. 65535) := (others => 0);
 
+   type Integer_32_Access is access all Integer_32;
+
+   procedure Make_And_Remember_Variable
+     (Name          : in String;
+      Var           : out Integer_32_Access;
+      Size          : in Integer_32 := 4;
+      Initial_Value : in Integer_32 := 0);
+
+   procedure Make_And_Remember_Variable
+     (Name          : in String;
+      Var           : out Integer_32;
+      Size          : in Integer_32 := 4;
+      Initial_Value : in Integer_32 := 0);
+
    function Fetch (Addr : Integer_32) return Integer_32;
    function CFetch (Addr : Integer_32) return Integer_32;
    procedure Store (Addr : in Integer_32; Value : in Integer_32);
@@ -91,6 +105,10 @@ package Aforth is
      (Name      : in String;
       Word      : in Ada_Word_Access;
       Immediate : in Boolean := False);
+
+   procedure Register_Constant
+     (Name  : in String;
+      Value : in Integer_32);
 
    Compilation_Buffer : array (Integer_32'(1) .. 16384) of Action_Type;
    Compilation_Index  : Integer_32 := 1;
