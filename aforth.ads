@@ -171,7 +171,6 @@ package Aforth is
    procedure Plus;
    procedure Plusstore;
    procedure Postpone;
-   procedure Prompt;
    procedure Quit;
    procedure Recurse;
    procedure Refill;
