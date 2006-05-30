@@ -1034,15 +1034,23 @@ package body Aforth is
    ------------
 
    procedure Refill is
-      Buffer : constant String  := Read_Line;
-      Last   : constant Natural := Natural'Min (Buffer'Length, 1024);
+   begin
+      Refill_Line (Read_Line);
+   end Refill;
+
+   -----------------
+   -- Refill_Line --
+   -----------------
+
+   procedure Refill_Line (Buffer : in String) is
+      Last : constant Natural := Natural'Min (Buffer'Length, 1024);
    begin
       for I in 1 .. Integer'Min (Buffer'Length, 1024) loop
          Memory (TIB + Integer_32 (I) - 1) := Character'Pos (Buffer (I));
       end loop;
       TIB_Count.all := Integer_32 (Last);
       IN_Ptr.all := 0;
-   end Refill;
+   end Refill_Line;
 
    --------------
    -- Register --

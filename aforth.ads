@@ -117,6 +117,8 @@ package Aforth is
 
    procedure Include_File (File_Name : in String);
 
+   procedure Refill_Line (Buffer : in String);
+
    --  Predefined Ada words
    procedure Again;
    procedure Ahead;
