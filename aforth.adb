@@ -590,6 +590,7 @@ package body Aforth is
             raise Already_Handled;
       end;
       Set_Input (File);
+      Use_RL := False;
       begin
          Main_Loop;
       exception
