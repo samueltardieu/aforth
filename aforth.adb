@@ -45,6 +45,9 @@ package body Aforth is
    Current_Action : Action_Type (Forth_Word);
    Current_IP     : Integer_32 := -1;
 
+   Use_RL         : Boolean := True;
+   --  Should the current input method use Read_Line?
+
    procedure Start_Definition (Name : in String);
 
    function To_String return String;
@@ -54,7 +57,7 @@ package body Aforth is
    procedure Execute_Forth_Word (Addr : in Integer_32);
 
    procedure Interpret;
-   procedure Main_Loop (Display_Prompt : Boolean := False);
+   procedure Main_Loop;
 
    function Word return String;
 
@@ -577,6 +580,7 @@ package body Aforth is
       Old_IN_Ptr     : constant Integer_32  := IN_Ptr.all;
       Old_TIB        : constant Byte_Array  :=
         Memory (TIB .. TIB + Old_TIB_Count - 1);
+      Old_Use_RL     : constant Boolean     := Use_RL;
    begin
       begin
          Open (File, In_File, File_Name);
@@ -586,6 +590,7 @@ package body Aforth is
             raise Already_Handled;
       end;
       Set_Input (File);
+      Use_RL := False;
       begin
          Main_Loop;
       exception
@@ -593,11 +598,13 @@ package body Aforth is
             Close (File);
             Set_Input (Previous_Input.all);
             Memory (TIB .. TIB + Old_TIB_Count - 1) := Old_TIB;
-            TIB_Count.all := Old_TIB_Count;
-            IN_Ptr.all := Old_IN_Ptr;
+            TIB_Count.all                           := Old_TIB_Count;
+            IN_Ptr.all                              := Old_IN_Ptr;
+            Use_RL                                  := Old_Use_RL;
          when others =>
             Close (File);
             Set_Input (Previous_Input.all);
+            Use_RL := Old_Use_RL;
             raise;
       end;
    end Include_File;
@@ -698,19 +705,9 @@ package body Aforth is
    -- Main_Loop --
    ---------------
 
-   procedure Main_Loop (Display_Prompt : Boolean := False) is
+   procedure Main_Loop is
    begin
       loop
-         if Display_Prompt then
-            if State.all = 0 then
-               New_Line;
-               Put ("ok> ");
-               Flush;
-            else
-               Put ("] ");
-               Flush;
-            end if;
-         end if;
          Refill;
          Interpret;
       end loop;
@@ -917,21 +914,6 @@ package body Aforth is
       return Pop (Data_Stack);
    end Pop;
 
-   ------------
-   -- Prompt --
-   ------------
-
-   procedure Prompt is
-   begin
-      if State.all = 0 then
-         Cr;
-         Put ("ok> ");
-      else
-         Put ("] ");
-      end if;
-      Flush;
-   end Prompt;
-
    --------------
    -- Postpone --
    --------------
@@ -998,7 +980,7 @@ package body Aforth is
          Return_Stack.Top := 0;
          Interpret_Mode;
          begin
-            Main_Loop (Display_Prompt => True);
+            Main_Loop;
          exception
             when End_Error =>
                return;
@@ -1034,15 +1016,38 @@ package body Aforth is
    ------------
 
    procedure Refill is
-      Buffer : constant String  := Read_Line;
-      Last   : constant Natural := Natural'Min (Buffer'Length, 1024);
+   begin
+      if Use_RL then
+         if State.all = 0 then
+            Cr;
+            Refill_Line (Read_Line ("ok> "));
+         else
+            Refill_Line (Read_Line ("] "));
+         end if;
+      else
+         declare
+            Buffer : String (1 .. 1024);
+            Last   : Natural;
+         begin
+            Get_Line (Buffer, Last);
+            Refill_Line (Buffer (1 .. Last));
+         end;
+      end if;
+   end Refill;
+
+   -----------------
+   -- Refill_Line --
+   -----------------
+
+   procedure Refill_Line (Buffer : in String) is
+      Last : constant Natural := Natural'Min (Buffer'Length, 1024);
    begin
       for I in 1 .. Integer'Min (Buffer'Length, 1024) loop
          Memory (TIB + Integer_32 (I) - 1) := Character'Pos (Buffer (I));
       end loop;
       TIB_Count.all := Integer_32 (Last);
       IN_Ptr.all := 0;
-   end Refill;
+   end Refill_Line;
 
    --------------
    -- Register --
@@ -1497,7 +1502,6 @@ begin
    Register_Ada_Word ("+", Plus'Access);
    Register_Ada_Word ("+!", Plusstore'Access);
    Register_Ada_Word ("POSTPONE", Postpone'Access, Immediate => True);
-   Register_Ada_Word ("PROMPT", Prompt'Access);
    Register_Ada_Word ("QUIT", Quit'Access);
    Register_Ada_Word ("RECURSE", Recurse'Access, Immediate => True);
    Register_Ada_Word ("REFILL", Refill'Access);
