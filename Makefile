@@ -1,6 +1,5 @@
-GNATMAKE ?= sh4-unknown-linux-gnu-gnatmake
-GNATCFLAGS = -I../areadline -g -O3 -gnatwa -gnatwe -gnaty
-# -O3 is needed on sh4 because of a bug when compiling png_io-open
+GNATMAKE ?= gnatmake
+GNATCFLAGS = -I../areadline -g -O2 -gnatwa -gnatwe -gnaty
 
 PROGRAMS = test_aforth
 
