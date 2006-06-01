@@ -758,7 +758,7 @@ package body Aforth is
    begin
       if Size = 4 then
          Align;
-         Store (Here.all ,Initial_Value);
+         Store (Here.all, Initial_Value);
       elsif Initial_Value /= 0 then
          raise Program_Error;
       end if;

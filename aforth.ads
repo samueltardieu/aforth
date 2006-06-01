@@ -93,7 +93,7 @@ package Aforth is
       Initial_Value : in Integer_32 := 0);
 
    function Fetch (Addr : Integer_32) return Integer_32;
-   function CFetch (Addr : Integer_32) return Integer_32;
+   function Cfetch (Addr : Integer_32) return Integer_32;
    procedure Store (Addr : in Integer_32; Value : in Integer_32);
 
    procedure Make_Variable
@@ -189,7 +189,9 @@ package Aforth is
    procedure Word;
    procedure Zeroequal;
    procedure Zerogreater;
+   procedure Zerogreaterequal;
    procedure Zeronotequal;
    procedure Zerosmaller;
+   procedure Zerosmallerequal;
 
 end Aforth;
