@@ -157,6 +157,7 @@ package Aforth is
    procedure Ichar;
    procedure Immediate;
    procedure Include;
+   procedure Interpret;
    procedure Interpret_Mode;
    procedure Literal;
    procedure Minus;

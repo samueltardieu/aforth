@@ -56,7 +56,6 @@ package body Aforth is
 
    procedure Execute_Forth_Word (Addr : in Integer_32);
 
-   procedure Interpret;
    procedure Main_Loop;
 
    function Word return String;
@@ -609,45 +608,6 @@ package body Aforth is
       end;
    end Include_File;
 
-   --------------------
-   -- Interpret_Mode --
-   --------------------
-
-   procedure Interpret_Mode is
-   begin
-      State.all := 0;
-   end Interpret_Mode;
-
-   ----------
-   -- Jump --
-   ----------
-
-   procedure Jump is
-   begin
-      Current_IP := Pop;
-   end Jump;
-
-   -------------------
-   -- Jump_If_False --
-   -------------------
-
-   procedure Jump_If_False is
-      Target : constant Integer_32 := Pop;
-   begin
-      if Pop = 0 then
-         Current_IP := Target;
-      end if;
-   end Jump_If_False;
-
-   -------------
-   -- Literal --
-   -------------
-
-   procedure Literal is
-   begin
-      Add_To_Compilation_Buffer (Pop);
-   end Literal;
-
    ---------------
    -- Interpret --
    ---------------
@@ -700,6 +660,45 @@ package body Aforth is
          end;
       end loop;
    end Interpret;
+
+   --------------------
+   -- Interpret_Mode --
+   --------------------
+
+   procedure Interpret_Mode is
+   begin
+      State.all := 0;
+   end Interpret_Mode;
+
+   ----------
+   -- Jump --
+   ----------
+
+   procedure Jump is
+   begin
+      Current_IP := Pop;
+   end Jump;
+
+   -------------------
+   -- Jump_If_False --
+   -------------------
+
+   procedure Jump_If_False is
+      Target : constant Integer_32 := Pop;
+   begin
+      if Pop = 0 then
+         Current_IP := Target;
+      end if;
+   end Jump_If_False;
+
+   -------------
+   -- Literal --
+   -------------
+
+   procedure Literal is
+   begin
+      Add_To_Compilation_Buffer (Pop);
+   end Literal;
 
    ---------------
    -- Main_Loop --
