@@ -188,14 +188,7 @@ package Aforth is
    procedure Store;
    procedure Swap;
    procedure Times;
-   procedure Twodrop;
    procedure Twodup;
    procedure Word;
-   procedure Zeroequal;
-   procedure Zerogreater;
-   procedure Zerogreaterequal;
-   procedure Zeronotequal;
-   procedure Zerosmaller;
-   procedure Zerosmallerequal;
 
 end Aforth;

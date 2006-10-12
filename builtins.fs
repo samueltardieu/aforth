@@ -1,2 +1,13 @@
 : constant align create , does> @ ;
 : variable align create 0 , ;
+: 0= 0 = ;
+: 0< 0 < ;
+: 0> 0 > ;
+: 0<= 0 <= ;
+: 0>= 0 >= ;
+: 0<> 0 <> ;
+: 2* 2 * ;
+: 2/ 2 / ;
+: 1+ 1 + ;
+: 1- 1 - ;
+: 2drop drop drop ;

@@ -1396,16 +1396,6 @@ package body Aforth is
       return Result;
    end To_String;
 
-   -------------
-   -- Twodrop --
-   -------------
-
-   procedure Twodrop is
-   begin
-      Drop;
-      Drop;
-   end Twodrop;
-
    ------------
    -- Twodup --
    ------------
@@ -1452,60 +1442,6 @@ package body Aforth is
       Word;
       return To_String;
    end Word;
-
-   ---------------
-   -- Zeroequal --
-   ---------------
-
-   procedure Zeroequal is
-   begin
-      Push (Pop = 0);
-   end Zeroequal;
-
-   -----------------
-   -- Zerogreater --
-   -----------------
-
-   procedure Zerogreater is
-   begin
-      Push (Pop > 0);
-   end Zerogreater;
-
-   ----------------------
-   -- Zerogreaterequal --
-   ----------------------
-
-   procedure Zerogreaterequal is
-   begin
-      Push (Pop >= 0);
-   end Zerogreaterequal;
-
-   ------------------
-   -- Zeronotequal --
-   ------------------
-
-   procedure Zeronotequal is
-   begin
-      Push (Pop /= 0);
-   end Zeronotequal;
-
-   -----------------
-   -- Zerosmaller --
-   -----------------
-
-   procedure Zerosmaller is
-   begin
-      Push (Pop < 0);
-   end Zerosmaller;
-
-   ----------------------
-   -- Zerosmallerequal --
-   ----------------------
-
-   procedure Zerosmallerequal is
-   begin
-      Push (Pop <= 0);
-   end Zerosmallerequal;
 
 begin
    Data_Stack   := new Stack_Type;
@@ -1592,13 +1528,6 @@ begin
    Register_Ada_Word ("SWAP", Swap'Access);
    Register_Ada_Word ("!", Store'Access);
    Register_Ada_Word ("*", Times'Access);
-   Register_Ada_Word ("2DROP", Twodrop'Access);
    Register_Ada_Word ("2DUP", Twodup'Access);
    Register_Ada_Word ("WORD", Word'Access);
-   Register_Ada_Word ("0=", Zeroequal'Access);
-   Register_Ada_Word ("0>", Zerogreater'Access);
-   Register_Ada_Word ("0>=", Zerogreaterequal'Access);
-   Register_Ada_Word ("0<>", Zeronotequal'Access);
-   Register_Ada_Word ("0<", Zerosmaller'Access);
-   Register_Ada_Word ("0<=", Zerosmallerequal'Access);
 end Aforth;
