@@ -577,6 +577,15 @@ package body Aforth is
       Add_To_Compilation_Buffer (Jump_If_False'Access);
    end Forth_While;
 
+   ------------
+   -- From_R --
+   ------------
+
+   procedure From_R is
+   begin
+      Push (Pop (Return_Stack));
+   end From_R;
+
    -------------
    -- Greater --
    -------------
@@ -1380,6 +1389,15 @@ package body Aforth is
       Push (Pop * Pop);
    end Times;
 
+   ----------
+   -- To_R --
+   ----------
+
+   procedure To_R is
+   begin
+      Push (Return_Stack, Pop);
+   end To_R;
+
    ---------------
    -- To_String --
    ---------------
@@ -1496,6 +1514,7 @@ begin
    Register_Ada_Word ("TYPE", Forth_Type'Access);
    Register_Ada_Word ("UNTIL", Forth_Until'Access, Immediate => True);
    Register_Ada_Word ("WHILE", Forth_While'Access, Immediate => True);
+   Register_Ada_Word ("R>", From_R'Access);
    Register_Ada_Word (">", Greater'Access);
    Register_Ada_Word (">=", Greaterequal'Access);
    Register_Ada_Word ("IMMEDIATE", Immediate'Access);
@@ -1528,6 +1547,7 @@ begin
    Register_Ada_Word ("SWAP", Swap'Access);
    Register_Ada_Word ("!", Store'Access);
    Register_Ada_Word ("*", Times'Access);
+   Register_Ada_Word (">R", To_R'Access);
    Register_Ada_Word ("2DUP", Twodup'Access);
    Register_Ada_Word ("WORD", Word'Access);
 end Aforth;

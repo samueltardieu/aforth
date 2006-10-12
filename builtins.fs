@@ -11,3 +11,4 @@
 : 1+ 1 + ;
 : 1- 1 - ;
 : 2drop drop drop ;
+: 2dup over over ;

@@ -154,6 +154,7 @@ package Aforth is
    procedure Forth_Type;
    procedure Forth_Until;
    procedure Forth_While;
+   procedure From_R;
    procedure Greater;
    procedure Greaterequal;
    procedure Ichar;
@@ -188,6 +189,7 @@ package Aforth is
    procedure Store;
    procedure Swap;
    procedure Times;
+   procedure To_R;
    procedure Twodup;
    procedure Word;
 
