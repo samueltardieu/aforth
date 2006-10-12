@@ -52,9 +52,11 @@ package Aforth is
    Stack_Overflow  : exception;
    Stack_Underflow : exception;
 
+   Stack_Max_Depth : constant := 50;
+
    type Stack_Type is record
-      Data : Integer_32_Array (1 .. 50);
-      Top  : Natural range 0 .. 50 := 0;
+      Data : Integer_32_Array (1 .. Stack_Max_Depth);
+      Top  : Natural range 0 .. Stack_Max_Depth := 0;
    end record;
 
    procedure Push (S : access Stack_Type; X : in Integer_32);
@@ -64,8 +66,10 @@ package Aforth is
    --  May raise stack underflow
 
    procedure Push (X : in Integer_32);
+   procedure Push_Unsigned (X : in Unsigned_32);
    procedure Push (B : in Boolean);
    function Pop return Integer_32;
+   function Pop_Unsigned return Unsigned_32;
    --  Shortcut operating on Data_Stack
 
    type Stack_Access is access Stack_Type;
@@ -117,7 +121,9 @@ package Aforth is
 
    procedure Include_File (File_Name : in String);
 
-   procedure Refill_Line (Buffer : in String);
+   procedure Interpret_Line (Line : in String);
+
+   Compile_Only : exception;
 
    --  Predefined Ada words
    procedure Again;
@@ -129,13 +135,17 @@ package Aforth is
    procedure Ccomma;
    procedure Cfetch;
    procedure Colon;
+   procedure Colon_Noname;
    procedure Comma;
    procedure Compile_Mode;
+   procedure Cquote;
    procedure Cr;
+   procedure Create;
    procedure Cstore;
    procedure Depth;
    procedure Div;
    procedure DivMod;
+   procedure Does;
    procedure Dot;
    procedure DotQuote;
    procedure DotS;
@@ -143,41 +153,49 @@ package Aforth is
    procedure Dup;
    procedure Emit;
    procedure Equal;
+   procedure Execute;
    procedure Fetch;
+   procedure Forth_And;
    procedure Forth_Begin;
    procedure Forth_Else;
    procedure Forth_If;
    procedure Forth_Mod;
+   procedure Forth_Or;
    procedure Forth_Then;
    procedure Forth_Type;
    procedure Forth_Until;
    procedure Forth_While;
+   procedure Forth_Xor;
+   procedure From_R;
    procedure Greater;
    procedure Greaterequal;
    procedure Ichar;
-   procedure Immediate;
    procedure Include;
    procedure Interpret;
    procedure Interpret_Mode;
+   procedure Key;
    procedure Literal;
    procedure Minus;
    procedure Minusstore;
    procedure Ms;
-   procedure Nip;
    procedure Notequal;
    procedure Oneminus;
    procedure Oneplus;
    procedure Over;
    procedure Parse;
+   procedure Pick;
    procedure Plus;
-   procedure Plusstore;
    procedure Postpone;
    procedure Quit;
+   procedure R_At;
    procedure Recurse;
    procedure Refill;
    procedure Repeat;
+   procedure Roll;
    procedure Scale;
+   procedure ScaleMod;
    procedure Semicolon;
+   procedure Set_Immediate;
    procedure Skip_Blanks;
    procedure Smaller;
    procedure Smallerequal;
@@ -186,14 +204,12 @@ package Aforth is
    procedure Store;
    procedure Swap;
    procedure Times;
-   procedure Twodrop;
-   procedure Twodup;
+   procedure To_R;
+   procedure Two_Dup;
+   procedure Two_From_R;
+   procedure Two_R_At;
+   procedure Two_To_R;
+   procedure Unused;
    procedure Word;
-   procedure Zeroequal;
-   procedure Zerogreater;
-   procedure Zerogreaterequal;
-   procedure Zeronotequal;
-   procedure Zerosmaller;
-   procedure Zerosmallerequal;
 
 end Aforth;

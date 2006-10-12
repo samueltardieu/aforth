@@ -21,6 +21,11 @@ package body Aforth is
       new Ada.Unchecked_Conversion (Byte_Access, Integer_32_Access);
    pragma Warnings (On);
 
+   function To_Unsigned_32 is
+      new Ada.Unchecked_Conversion (Integer_32, Unsigned_32);
+   function To_Integer_32 is
+      new Ada.Unchecked_Conversion (Unsigned_32, Integer_32);
+
    procedure Free is
       new Ada.Unchecked_Deallocation (String, String_Access);
 
@@ -32,6 +37,10 @@ package body Aforth is
    TIB_Count : Integer_32_Access;
    IN_Ptr    : Integer_32_Access;
    State     : Integer_32_Access;
+
+   Forth_Exit : constant Action_Type := (Kind       => Forth_Word,
+                                         Immediate  => True,
+                                         Forth_Proc => -1);
 
    procedure Remember_Variable
      (Name : in String;
@@ -67,12 +76,19 @@ package body Aforth is
    procedure Add_To_Compilation_Buffer (Ada_Proc : in Ada_Word_Access);
    procedure Add_To_Compilation_Buffer (Value : in Integer_32);
 
+   procedure DoDoes;
+
+   procedure Refill_Line (Buffer : in String);
+
+   procedure Check_Compile_Only;
+
    -------------------------------
    -- Add_To_Compilation_Buffer --
    -------------------------------
 
    procedure Add_To_Compilation_Buffer (Action : in Action_Type) is
    begin
+      Check_Compile_Only;
       Compilation_Buffer (Compilation_Index) := Action;
       Compilation_Index := Compilation_Index + 1;
    end Add_To_Compilation_Buffer;
@@ -182,6 +198,17 @@ package body Aforth is
       Push (Character'Pos (Word (1)));
    end Char;
 
+   ------------------------
+   -- Check_Compile_Only --
+   ------------------------
+
+   procedure Check_Compile_Only is
+   begin
+      if State.all /= 1 then
+         raise Compile_Only;
+      end if;
+   end Check_Compile_Only;
+
    ------------------
    -- Compile_Mode --
    ------------------
@@ -191,6 +218,29 @@ package body Aforth is
       State.all := 1;
    end Compile_Mode;
 
+   ------------
+   -- Cquote --
+   ------------
+
+   procedure Cquote is
+      Length : Integer_32;
+      Addr   : Integer_32;
+   begin
+      Check_Compile_Only;
+      Push (Character'Pos ('"'));
+      Parse;
+      Length := Pop;
+      Addr := Pop;
+      Add_To_Compilation_Buffer (Here.all);
+      Push (Length);
+      Ccomma;
+      for I in 1 .. Length loop
+         Push (Integer_32 (Memory (Addr)));
+         Ccomma;
+         Addr := Addr + 1;
+      end loop;
+   end Cquote;
+
    -----------
    -- Colon --
    -----------
@@ -199,6 +249,16 @@ package body Aforth is
    begin
       Start_Definition (Word);
    end Colon;
+
+   ------------------
+   -- Colon_Noname --
+   ------------------
+
+   procedure Colon_Noname is
+   begin
+      Push (Compilation_Index);
+      Start_Definition ("");
+   end Colon_Noname;
 
    ------------
    -- Ccomma --
@@ -233,6 +293,17 @@ package body Aforth is
       Push (10);
       Emit;
    end Cr;
+
+   ------------
+   -- Create --
+   ------------
+
+   procedure Create is
+   begin
+      Colon;
+      Add_To_Compilation_Buffer (Here.all);
+      Semicolon;
+   end Create;
 
    ------------
    -- Cstore --
@@ -274,6 +345,47 @@ package body Aforth is
       Push (A rem B);
       Push (A / B);
    end DivMod;
+
+   ------------
+   -- DoDoes --
+   ------------
+
+   procedure DoDoes is
+   begin
+      --  Patch the latest exit by inserting a call to the current
+      --  action.
+
+      pragma Assert (Compilation_Buffer (Compilation_Index - 1) = Forth_Exit);
+      Compilation_Buffer (Compilation_Index) :=
+        Compilation_Buffer (Compilation_Index - 1);
+      Compilation_Buffer (Compilation_Index - 1) :=
+        Action_Type'(Kind       => Forth_Word,
+                     Immediate  => True,
+                     Forth_Proc => Pop);
+      Compilation_Index := Compilation_Index + 1;
+   end DoDoes;
+
+   ----------
+   -- Does --
+   ----------
+
+   procedure Does is
+
+      --  Terminate current word after asking to patch the latest created
+      --  one. Compilation buffer after index, call to DoDoes and exit
+      --  is Compilation_Index + 3.
+
+      Does_Part : constant Integer_32 := Compilation_Index + 3;
+   begin
+      Add_To_Compilation_Buffer (Does_Part);
+      Add_To_Compilation_Buffer (DoDoes'Access);
+      Semicolon;
+
+      --  Start an unnamed word corresponding to the DOES> part
+
+      Start_Definition ("");
+      pragma Assert (Compilation_Index = Does_Part);
+   end Does;
 
    ---------
    -- Dot --
@@ -355,6 +467,15 @@ package body Aforth is
       Push (Pop = Pop);
    end Equal;
 
+   -------------
+   -- Execute --
+   -------------
+
+   procedure Execute is
+   begin
+      Execute_Forth_Word (Pop);
+   end Execute;
+
    --------------------
    -- Execute_Action --
    --------------------
@@ -385,9 +506,7 @@ package body Aforth is
               Compilation_Buffer (Current_IP);
          begin
             Current_IP := Current_IP + 1;
-            if Current_Action.Kind = Forth_Word and then
-              Current_Action.Forth_Proc = -1
-            then
+            if Current_Action = Forth_Exit then
                Current_IP := Pop (Return_Stack);
                return;
             end if;
@@ -437,6 +556,15 @@ package body Aforth is
                        Name & " not found");
    end Find;
 
+   ---------------
+   -- Forth_And --
+   ---------------
+
+   procedure Forth_And is
+   begin
+      Push_Unsigned (Pop_Unsigned and Pop_Unsigned);
+   end Forth_And;
+
    -----------------
    -- Forth_Begin --
    -----------------
@@ -479,6 +607,15 @@ package body Aforth is
       Push (Pop mod A);
    end Forth_Mod;
 
+   --------------
+   -- Forth_Or --
+   --------------
+
+   procedure Forth_Or is
+   begin
+      Push_Unsigned (Pop_Unsigned or Pop_Unsigned);
+   end Forth_Or;
+
    ----------------
    -- Forth_Then --
    ----------------
@@ -519,6 +656,24 @@ package body Aforth is
       Add_To_Compilation_Buffer (Jump_If_False'Access);
    end Forth_While;
 
+   ---------------
+   -- Forth_Xor --
+   ---------------
+
+   procedure Forth_Xor is
+   begin
+      Push_Unsigned (Pop_Unsigned xor Pop_Unsigned);
+   end Forth_Xor;
+
+   ------------
+   -- From_R --
+   ------------
+
+   procedure From_R is
+   begin
+      Push (Pop (Return_Stack));
+   end From_R;
+
    -------------
    -- Greater --
    -------------
@@ -548,15 +703,6 @@ package body Aforth is
       Char;
       Literal;
    end Ichar;
-
-   ---------------
-   -- Immediate --
-   ---------------
-
-   procedure Immediate is
-   begin
-      Set_Last_Immediate (Dict);
-   end Immediate;
 
    -------------
    -- Include --
@@ -662,6 +808,16 @@ package body Aforth is
    end Interpret;
 
    --------------------
+   -- Interpret_Line --
+   --------------------
+
+   procedure Interpret_Line (Line : in String) is
+   begin
+      Refill_Line (Line);
+      Interpret;
+   end Interpret_Line;
+
+   --------------------
    -- Interpret_Mode --
    --------------------
 
@@ -690,6 +846,17 @@ package body Aforth is
          Current_IP := Target;
       end if;
    end Jump_If_False;
+
+   ---------
+   -- Key --
+   ---------
+
+   procedure Key is
+      C : Character;
+   begin
+      Get_Immediate (C);
+      Push (Integer_32 (Character'Pos (C)));
+   end Key;
 
    -------------
    -- Literal --
@@ -791,16 +958,6 @@ package body Aforth is
    begin
       delay until Clock + To_Time_Span (Duration (Float (Pop) / 1000.0));
    end Ms;
-   ---------
-   -- Nip --
-   ---------
-
-   procedure Nip is
-      A : constant Integer_32 := Pop;
-   begin
-      Drop;
-      Push (A);
-   end Nip;
 
    --------------
    -- Notequal --
@@ -834,12 +991,9 @@ package body Aforth is
    ----------
 
    procedure Over is
-      A : constant Integer_32 := Pop;
-      B : constant Integer_32 := Pop;
    begin
-      Push (B);
-      Push (A);
-      Push (B);
+      Push (1);
+      Pick;
    end Over;
 
    -----------
@@ -872,6 +1026,16 @@ package body Aforth is
    end Patch_Jump;
 
    ----------
+   -- Pick --
+   ----------
+
+   procedure Pick is
+      How_Deep : constant Integer := Integer (Pop);
+   begin
+      Push (Data_Stack.Data (Data_Stack.Top - How_Deep));
+   end Pick;
+
+   ----------
    -- Plus --
    ----------
 
@@ -879,17 +1043,6 @@ package body Aforth is
    begin
       Push (Pop + Pop);
    end Plus;
-
-   ---------------
-   -- Plusstore --
-   ---------------
-
-   procedure Plusstore is
-      Addr : constant Integer_32 := Pop;
-      Cst  : constant Integer_32 := Pop;
-   begin
-      Store (Addr, Fetch (Addr) + Cst);
-   end Plusstore;
 
    ---------
    -- Pop --
@@ -912,6 +1065,15 @@ package body Aforth is
    begin
       return Pop (Data_Stack);
    end Pop;
+
+   ------------------
+   -- Pop_Unsigned --
+   ------------------
+
+   function Pop_Unsigned return Unsigned_32 is
+   begin
+      return To_Unsigned_32 (Pop);
+   end Pop_Unsigned;
 
    --------------
    -- Postpone --
@@ -968,6 +1130,15 @@ package body Aforth is
       end if;
    end Push;
 
+   -------------------
+   -- Push_Unsigned --
+   -------------------
+
+   procedure Push_Unsigned (X : in Unsigned_32) is
+   begin
+      Push (To_Integer_32 (X));
+   end Push_Unsigned;
+
    ----------
    -- Quit --
    ----------
@@ -998,6 +1169,15 @@ package body Aforth is
          end;
       end loop;
    end Quit;
+
+   ----------
+   -- R_At --
+   ----------
+
+   procedure R_At is
+   begin
+      Push (Return_Stack.Data (Return_Stack.Top));
+   end R_At;
 
    -------------
    -- Recurse --
@@ -1075,8 +1255,12 @@ package body Aforth is
       Immediate : in Boolean := False)
    is
    begin
-      Register (Name,
-                (Kind => Ada_Word, Ada_Proc => Word, Immediate => Immediate));
+      Start_Definition (Name);
+      Add_To_Compilation_Buffer (Word);
+      Semicolon;
+      if Immediate then
+         Set_Immediate;
+      end if;
    end Register_Ada_Word;
 
    -----------------------
@@ -1137,6 +1321,19 @@ package body Aforth is
       end loop;
    end Repeat;
 
+   ----------
+   -- Roll --
+   ----------
+
+   procedure Roll is
+      Index    : constant Integer    := Data_Stack.Top - Integer (Pop);
+      Moved    : constant Integer_32 := Data_Stack.Data (Index);
+   begin
+      Data_Stack.Data (Index .. Data_Stack.Top - 1) :=
+        Data_Stack.Data (Index + 1 .. Data_Stack.Top);
+      Data_Stack.Data (Data_Stack.Top) := Moved;
+   end Roll;
+
    -----------
    -- Scale --
    -----------
@@ -1149,20 +1346,46 @@ package body Aforth is
       Push (Integer_32 (A * B / C));
    end Scale;
 
+   --------------
+   -- ScaleMod --
+   --------------
+
+   procedure ScaleMod is
+      C : constant Integer_64 := Integer_64 (Pop);
+      B : constant Integer_64 := Integer_64 (Pop);
+      A : constant Integer_64 := Integer_64 (Pop);
+   begin
+      Push (Integer_32 ((A * B) mod C));
+      Push (Integer_32 (A * B / C));
+   end ScaleMod;
+
    ---------------
    -- Semicolon --
    ---------------
 
    procedure Semicolon is
    begin
-      Add_To_Compilation_Buffer
-        (Action_Type'(Kind       => Forth_Word,
-                      Immediate  => True,
-                      Forth_Proc => -1));
-      Register (Current_Name.all, Current_Action);
-      Free (Current_Name);
+      Add_To_Compilation_Buffer (Forth_Exit);
+
+      --  Current_Name can be null during definition or completion of
+      --  a DOES> prefix.
+
+      if Current_Name /= null then
+         Register (Current_Name.all, Current_Action);
+         Free (Current_Name);
+      end if;
+
       Interpret_Mode;
    end Semicolon;
+
+   -------------------
+   -- Set_Immediate --
+   -------------------
+
+   procedure Set_Immediate is
+   begin
+      Set_Last_Immediate (Dict);
+   end Set_Immediate;
 
    ------------------------
    -- Set_Last_Immediate --
@@ -1227,23 +1450,21 @@ package body Aforth is
    ------------
 
    procedure Squote is
+      Length : Integer_32;
+      Addr   : Integer_32;
    begin
+      Check_Compile_Only;
       Push (Character'Pos ('"'));
       Parse;
-      if State.all = 1 then
-         declare
-            Length : constant Integer_32 := Pop;
-            Addr   :          Integer_32 := Pop;
-         begin
-            Add_To_Compilation_Buffer (Here.all);
-            Add_To_Compilation_Buffer (Addr);
-            for I in 1 .. Length loop
-               Push (Integer_32 (Memory (Addr)));
-               Ccomma;
-               Addr := Addr + 1;
-            end loop;
-         end;
-      end if;
+      Length := Pop;
+      Addr := Pop;
+      Add_To_Compilation_Buffer (Here.all);
+      Add_To_Compilation_Buffer (Addr);
+      for I in 1 .. Length loop
+         Push (Integer_32 (Memory (Addr)));
+         Ccomma;
+         Addr := Addr + 1;
+      end loop;
    end Squote;
 
    ----------------------
@@ -1252,7 +1473,9 @@ package body Aforth is
 
    procedure Start_Definition (Name : in String) is
    begin
-      Current_Name              := new String'(Name);
+      if Name /= "" then
+         Current_Name              := new String'(Name);
+      end if;
       Current_Action.Immediate  := False;
       Current_Action.Forth_Proc := Compilation_Index;
       Compile_Mode;
@@ -1305,6 +1528,15 @@ package body Aforth is
       Push (Pop * Pop);
    end Times;
 
+   ----------
+   -- To_R --
+   ----------
+
+   procedure To_R is
+   begin
+      Push (Return_Stack, Pop);
+   end To_R;
+
    ---------------
    -- To_String --
    ---------------
@@ -1322,20 +1554,10 @@ package body Aforth is
    end To_String;
 
    -------------
-   -- Twodrop --
+   -- Two_Dup --
    -------------
 
-   procedure Twodrop is
-   begin
-      Drop;
-      Drop;
-   end Twodrop;
-
-   ------------
-   -- Twodup --
-   ------------
-
-   procedure Twodup is
+   procedure Two_Dup is
       A : constant Integer_32 := Pop;
       B : constant Integer_32 := Pop;
    begin
@@ -1343,7 +1565,49 @@ package body Aforth is
       Push (A);
       Push (B);
       Push (A);
-   end Twodup;
+   end Two_Dup;
+
+   ----------------
+   -- Two_From_R --
+   ----------------
+
+   procedure Two_From_R is
+   begin
+      From_R;
+      From_R;
+      Swap;
+   end Two_From_R;
+
+   --------------
+   -- Two_R_At --
+   --------------
+
+   procedure Two_R_At is
+   begin
+      Push (Return_Stack.Data (Return_Stack.Top - 1));
+      Push (Return_Stack.Data (Return_Stack.Top));
+      Return_Stack.Top := Return_Stack.Top - 2;
+   end Two_R_At;
+
+   --------------
+   -- Two_To_R --
+   --------------
+
+   procedure Two_To_R is
+   begin
+      Swap;
+      To_R;
+      To_R;
+   end Two_To_R;
+
+   ------------
+   -- Unused --
+   ------------
+
+   procedure Unused is
+   begin
+      Push (Memory'Last - Here.all + 1);
+   end Unused;
 
    ----------
    -- Word --
@@ -1378,60 +1642,6 @@ package body Aforth is
       return To_String;
    end Word;
 
-   ---------------
-   -- Zeroequal --
-   ---------------
-
-   procedure Zeroequal is
-   begin
-      Push (Pop = 0);
-   end Zeroequal;
-
-   -----------------
-   -- Zerogreater --
-   -----------------
-
-   procedure Zerogreater is
-   begin
-      Push (Pop > 0);
-   end Zerogreater;
-
-   ----------------------
-   -- Zerogreaterequal --
-   ----------------------
-
-   procedure Zerogreaterequal is
-   begin
-      Push (Pop >= 0);
-   end Zerogreaterequal;
-
-   ------------------
-   -- Zeronotequal --
-   ------------------
-
-   procedure Zeronotequal is
-   begin
-      Push (Pop /= 0);
-   end Zeronotequal;
-
-   -----------------
-   -- Zerosmaller --
-   -----------------
-
-   procedure Zerosmaller is
-   begin
-      Push (Pop < 0);
-   end Zerosmaller;
-
-   ----------------------
-   -- Zerosmallerequal --
-   ----------------------
-
-   procedure Zerosmallerequal is
-   begin
-      Push (Pop <= 0);
-   end Zerosmallerequal;
-
 begin
    Data_Stack   := new Stack_Type;
    Return_Stack := new Stack_Type;
@@ -1457,14 +1667,18 @@ begin
    Register_Ada_Word ("BOUNDS", Bounds'Access);
    Register_Ada_Word ("CHAR", Char'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
+   Register_Ada_Word ("C""", Cquote'Access, Immediate => True);
    Register_Ada_Word ("C!", Cstore'Access);
    Register_Ada_Word (":", Colon'Access);
+   Register_Ada_Word (":NONAME", Colon_Noname'Access);
    Register_Ada_Word ("]", Compile_Mode'Access);
    Register_Ada_Word ("C,", Ccomma'Access);
    Register_Ada_Word (",", Comma'Access);
    Register_Ada_Word ("CR", Cr'Access);
+   Register_Ada_Word ("CREATE", Create'Access);
    Register_Ada_Word ("/", Div'Access);
    Register_Ada_Word ("/MOD", DivMod'Access);
+   Register_Ada_Word ("DOES>", Does'Access, Immediate => True);
    Register_Ada_Word ("DROP", Drop'Access);
    Register_Ada_Word ("DUP", Dup'Access);
    Register_Ada_Word ("DEPTH", Depth'Access);
@@ -1473,40 +1687,48 @@ begin
    Register_Ada_Word (".S", DotS'Access);
    Register_Ada_Word ("EMIT", Emit'Access);
    Register_Ada_Word ("=", Equal'Access);
+   Register_Ada_Word ("EXECUTE", Execute'Access);
    Register_Ada_Word ("@", Fetch'Access);
+   Register_Ada_Word ("AND", Forth_And'Access);
    Register_Ada_Word ("BEGIN", Forth_Begin'Access, Immediate => True);
    Register_Ada_Word ("ELSE", Forth_Else'Access, Immediate => True);
    Register_Ada_Word ("[CHAR]", Ichar'Access, Immediate => True);
    Register_Ada_Word ("IF", Forth_If'Access, Immediate => True);
    Register_Ada_Word ("MOD", Forth_Mod'Access);
+   Register_Ada_Word ("OR", Forth_Or'Access);
    Register_Ada_Word ("THEN", Forth_Then'Access, Immediate => True);
    Register_Ada_Word ("TYPE", Forth_Type'Access);
    Register_Ada_Word ("UNTIL", Forth_Until'Access, Immediate => True);
    Register_Ada_Word ("WHILE", Forth_While'Access, Immediate => True);
+   Register_Ada_Word ("XOR", Forth_Xor'Access);
+   Register_Ada_Word ("R>", From_R'Access);
    Register_Ada_Word (">", Greater'Access);
    Register_Ada_Word (">=", Greaterequal'Access);
-   Register_Ada_Word ("IMMEDIATE", Immediate'Access);
    Register_Ada_Word ("INCLUDE", Include'Access);
    Register_Ada_Word ("[", Interpret_Mode'Access, Immediate => True);
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
+   Register_Ada_Word ("KEY", Key'Access);
    Register_Ada_Word ("-", Minus'Access);
    Register_Ada_Word ("-!", Minus'Access);
    Register_Ada_Word ("MS", Ms'Access);
-   Register_Ada_Word ("NIP", Nip'Access);
    Register_Ada_Word ("<>", Notequal'Access);
    Register_Ada_Word ("1-", Oneminus'Access);
    Register_Ada_Word ("1+", Oneplus'Access);
    Register_Ada_Word ("OVER", Over'Access);
    Register_Ada_Word ("PARSE", Parse'Access);
+   Register_Ada_Word ("PICK", Pick'Access);
    Register_Ada_Word ("+", Plus'Access);
-   Register_Ada_Word ("+!", Plusstore'Access);
    Register_Ada_Word ("POSTPONE", Postpone'Access, Immediate => True);
    Register_Ada_Word ("QUIT", Quit'Access);
+   Register_Ada_Word ("R@", R_At'Access);
    Register_Ada_Word ("RECURSE", Recurse'Access, Immediate => True);
    Register_Ada_Word ("REFILL", Refill'Access);
    Register_Ada_Word ("REPEAT", Repeat'Access, Immediate => True);
+   Register_Ada_Word ("ROLL", Roll'Access);
    Register_Ada_Word ("*/", Scale'Access);
+   Register_Ada_Word ("*/MOD", ScaleMod'Access);
    Register_Ada_Word (";", Semicolon'Access, Immediate => True);
+   Register_Ada_Word ("IMMEDIATE", Set_Immediate'Access);
    Register_Ada_Word ("SKIP-BLANKS", Skip_Blanks'Access);
    Register_Ada_Word ("<", Smaller'Access);
    Register_Ada_Word ("<=", Smallerequal'Access);
@@ -1515,13 +1737,11 @@ begin
    Register_Ada_Word ("SWAP", Swap'Access);
    Register_Ada_Word ("!", Store'Access);
    Register_Ada_Word ("*", Times'Access);
-   Register_Ada_Word ("2DROP", Twodrop'Access);
-   Register_Ada_Word ("2DUP", Twodup'Access);
+   Register_Ada_Word (">R", To_R'Access);
+   Register_Ada_Word ("2DUP", Two_Dup'Access);
+   Register_Ada_Word ("2R>", Two_From_R'Access);
+   Register_Ada_Word ("2R@", Two_R_At'Access);
+   Register_Ada_Word ("2>R", Two_To_R'Access);
+   Register_Ada_Word ("UNUSED", Unused'Access);
    Register_Ada_Word ("WORD", Word'Access);
-   Register_Ada_Word ("0=", Zeroequal'Access);
-   Register_Ada_Word ("0>", Zerogreater'Access);
-   Register_Ada_Word ("0>=", Zerogreaterequal'Access);
-   Register_Ada_Word ("0<>", Zeronotequal'Access);
-   Register_Ada_Word ("0<", Zerosmaller'Access);
-   Register_Ada_Word ("0<=", Zerosmallerequal'Access);
 end Aforth;
