@@ -5,7 +5,9 @@
 
 import sys
 
-ada = sys.argv[2]
+try: ada = sys.argv[2]
+except IndexError: ada = sys.argv[1][:-3].capitalize()
+
 lower = ada.lower()
 open("%s.ads" % lower, "w").write("""package %s is
    pragma Elaborate_Body;

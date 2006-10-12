@@ -147,7 +147,6 @@ package Aforth is
    procedure Equal;
    procedure Fetch;
    procedure Forth_Begin;
-   procedure Forth_Constant;
    procedure Forth_Else;
    procedure Forth_If;
    procedure Forth_Mod;
@@ -191,7 +190,6 @@ package Aforth is
    procedure Times;
    procedure Twodrop;
    procedure Twodup;
-   procedure Variable;
    procedure Word;
    procedure Zeroequal;
    procedure Zerogreater;

@@ -1,6 +1,6 @@
 with Aforth; use Aforth;
-with Test;
-pragma Warnings (Off, Test);
+with Builtins;
+pragma Warnings (Off, Builtins);
 
 procedure Test_Aforth is
 begin
