@@ -91,6 +91,23 @@ package body Aforth is
    procedure Add_To_Compilation_Buffer (Action : in Action_Type) is
    begin
       Check_Compile_Only;
+
+      --  Properly inline Ada words called through a Forth wrapper
+      --  as they may need to preserve the return stack (>R and friends).
+
+      if Action.Kind = Forth_Word and then Action /= Forth_Exit then
+         declare
+            First_Action : constant Action_Type :=
+              Compilation_Buffer (Action.Forth_Proc);
+         begin
+            if First_Action.Kind = Ada_Word and then
+              Compilation_Buffer (Action.Forth_Proc + 1) = Forth_Exit
+            then
+               Add_To_Compilation_Buffer (First_Action);
+               return;
+            end if;
+         end;
+      end if;
       Compilation_Buffer (Compilation_Index) := Action;
       Compilation_Index := Compilation_Index + 1;
    end Add_To_Compilation_Buffer;
