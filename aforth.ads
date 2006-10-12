@@ -137,6 +137,7 @@ package Aforth is
    procedure Depth;
    procedure Div;
    procedure DivMod;
+   procedure Does;
    procedure Dot;
    procedure DotQuote;
    procedure DotS;

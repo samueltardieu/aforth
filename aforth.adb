@@ -33,6 +33,10 @@ package body Aforth is
    IN_Ptr    : Integer_32_Access;
    State     : Integer_32_Access;
 
+   Forth_Exit : constant Action_Type := (Kind       => Forth_Word,
+                                         Immediate  => True,
+                                         Forth_Proc => -1);
+
    procedure Remember_Variable
      (Name : in String;
       Var  : out Integer_32_Access);
@@ -66,6 +70,8 @@ package body Aforth is
 
    procedure Add_To_Compilation_Buffer (Ada_Proc : in Ada_Word_Access);
    procedure Add_To_Compilation_Buffer (Value : in Integer_32);
+
+   procedure DoDoes;
 
    -------------------------------
    -- Add_To_Compilation_Buffer --
@@ -286,6 +292,47 @@ package body Aforth is
       Push (A / B);
    end DivMod;
 
+   ------------
+   -- DoDoes --
+   ------------
+
+   procedure DoDoes is
+   begin
+      --  Patch the latest exit by inserting a call to the current
+      --  action.
+
+      pragma Assert (Compilation_Buffer (Compilation_Index - 1) = Forth_Exit);
+      Compilation_Buffer (Compilation_Index) :=
+        Compilation_Buffer (Compilation_Index - 1);
+      Compilation_Buffer (Compilation_Index - 1) :=
+        Action_Type'(Kind       => Forth_Word,
+                     Immediate  => True,
+                     Forth_Proc => Pop);
+      Compilation_Index := Compilation_Index + 1;
+   end DoDoes;
+
+   ----------
+   -- Does --
+   ----------
+
+   procedure Does is
+
+      --  Terminate current word after asking to patch the latest created
+      --  one. Compilation buffer after index, call to DoDoes and exit
+      --  is Compilation_Index + 3.
+
+      Does_Part : constant Integer_32 := Compilation_Index + 3;
+   begin
+      Add_To_Compilation_Buffer (Does_Part);
+      Add_To_Compilation_Buffer (DoDoes'Access);
+      Semicolon;
+
+      --  Start an unnamed word corresponding to the DOES> part
+
+      Start_Definition ("");
+      pragma Assert (Compilation_Index = Does_Part);
+   end Does;
+
    ---------
    -- Dot --
    ---------
@@ -396,9 +443,7 @@ package body Aforth is
               Compilation_Buffer (Current_IP);
          begin
             Current_IP := Current_IP + 1;
-            if Current_Action.Kind = Forth_Word and then
-              Current_Action.Forth_Proc = -1
-            then
+            if Current_Action = Forth_Exit then
                Current_IP := Pop (Return_Stack);
                return;
             end if;
@@ -1178,12 +1223,16 @@ package body Aforth is
 
    procedure Semicolon is
    begin
-      Add_To_Compilation_Buffer
-        (Action_Type'(Kind       => Forth_Word,
-                      Immediate  => True,
-                      Forth_Proc => -1));
-      Register (Current_Name.all, Current_Action);
-      Free (Current_Name);
+      Add_To_Compilation_Buffer (Forth_Exit);
+
+      --  Current_Name can be null during definition or completion of
+      --  a DOES> prefix.
+
+      if Current_Name /= null then
+         Register (Current_Name.all, Current_Action);
+         Free (Current_Name);
+      end if;
+
       Interpret_Mode;
    end Semicolon;
 
@@ -1275,7 +1324,9 @@ package body Aforth is
 
    procedure Start_Definition (Name : in String) is
    begin
-      Current_Name              := new String'(Name);
+      if Name /= "" then
+         Current_Name              := new String'(Name);
+      end if;
       Current_Action.Immediate  := False;
       Current_Action.Forth_Proc := Compilation_Index;
       Compile_Mode;
@@ -1501,6 +1552,7 @@ begin
    Register_Ada_Word ("CREATE", Create'Access);
    Register_Ada_Word ("/", Div'Access);
    Register_Ada_Word ("/MOD", DivMod'Access);
+   Register_Ada_Word ("DOES>", Does'Access, Immediate => True);
    Register_Ada_Word ("DROP", Drop'Access);
    Register_Ada_Word ("DUP", Dup'Access);
    Register_Ada_Word ("DEPTH", Depth'Access);

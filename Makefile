@@ -1,5 +1,5 @@
 GNATMAKE ?= gnatmake
-GNATCFLAGS = -I../areadline -g -O2 -gnatwa -gnatwe -gnaty
+GNATCFLAGS = -I../areadline -g -O2 -gnatwa -gnatwe -gnaty -gnata
 
 PROGRAMS = test_aforth
 
