@@ -242,6 +242,10 @@ package body Aforth is
    begin
       Colon;
       Add_To_Compilation_Buffer (Here.all);
+
+      --  The NOP can be patched later if there is a DOES>
+
+      Add_To_Compilation_Buffer (Nop'Access);
       Semicolon;
    end Create;
 
@@ -457,6 +461,17 @@ package body Aforth is
       Push (-1);
       Push (Compilation_Index);
    end Forth_Begin;
+
+   --------------------
+   -- Forth_Constant --
+   --------------------
+
+   procedure Forth_Constant is
+   begin
+      Colon;
+      Add_To_Compilation_Buffer (Pop);
+      Semicolon;
+   end Forth_Constant;
 
    ----------------
    -- Forth_Else --
@@ -802,6 +817,7 @@ package body Aforth is
    begin
       delay until Clock + To_Time_Span (Duration (Float (Pop) / 1000.0));
    end Ms;
+
    ---------
    -- Nip --
    ---------
@@ -812,6 +828,15 @@ package body Aforth is
       Drop;
       Push (A);
    end Nip;
+
+   ---------
+   -- Nop --
+   ---------
+
+   procedure Nop is
+   begin
+      null;
+   end Nop;
 
    --------------
    -- Notequal --
@@ -1487,6 +1512,7 @@ begin
    Register_Ada_Word ("=", Equal'Access);
    Register_Ada_Word ("@", Fetch'Access);
    Register_Ada_Word ("BEGIN", Forth_Begin'Access, Immediate => True);
+   Register_Ada_Word ("CONSTANT", Forth_Constant'Access);
    Register_Ada_Word ("ELSE", Forth_Else'Access, Immediate => True);
    Register_Ada_Word ("[CHAR]", Ichar'Access, Immediate => True);
    Register_Ada_Word ("IF", Forth_If'Access, Immediate => True);

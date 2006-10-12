@@ -146,6 +146,7 @@ package Aforth is
    procedure Equal;
    procedure Fetch;
    procedure Forth_Begin;
+   procedure Forth_Constant;
    procedure Forth_Else;
    procedure Forth_If;
    procedure Forth_Mod;
@@ -165,6 +166,7 @@ package Aforth is
    procedure Minusstore;
    procedure Ms;
    procedure Nip;
+   procedure Nop;
    procedure Notequal;
    procedure Oneminus;
    procedure Oneplus;
