@@ -242,10 +242,6 @@ package body Aforth is
    begin
       Colon;
       Add_To_Compilation_Buffer (Here.all);
-
-      --  The NOP can be patched later if there is a DOES>
-
-      Add_To_Compilation_Buffer (Nop'Access);
       Semicolon;
    end Create;
 
@@ -828,15 +824,6 @@ package body Aforth is
       Drop;
       Push (A);
    end Nip;
-
-   ---------
-   -- Nop --
-   ---------
-
-   procedure Nop is
-   begin
-      null;
-   end Nop;
 
    --------------
    -- Notequal --

@@ -166,7 +166,6 @@ package Aforth is
    procedure Minusstore;
    procedure Ms;
    procedure Nip;
-   procedure Nop;
    procedure Notequal;
    procedure Oneminus;
    procedure Oneplus;
