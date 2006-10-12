@@ -191,6 +191,7 @@ package Aforth is
    procedure Times;
    procedure Twodrop;
    procedure Twodup;
+   procedure Variable;
    procedure Word;
    procedure Zeroequal;
    procedure Zerogreater;

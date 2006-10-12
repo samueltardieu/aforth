@@ -1381,6 +1381,18 @@ package body Aforth is
       Push (A);
    end Twodup;
 
+   --------------
+   -- Variable --
+   --------------
+
+   procedure Variable is
+   begin
+      Align;
+      Create;
+      Push (0);
+      Comma;
+   end Variable;
+
    ----------
    -- Word --
    ----------
@@ -1555,6 +1567,7 @@ begin
    Register_Ada_Word ("*", Times'Access);
    Register_Ada_Word ("2DROP", Twodrop'Access);
    Register_Ada_Word ("2DUP", Twodup'Access);
+   Register_Ada_Word ("VARIABLE", Variable'Access);
    Register_Ada_Word ("WORD", Word'Access);
    Register_Ada_Word ("0=", Zeroequal'Access);
    Register_Ada_Word ("0>", Zerogreater'Access);
