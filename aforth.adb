@@ -73,6 +73,8 @@ package body Aforth is
 
    procedure DoDoes;
 
+   procedure Refill_Line (Buffer : in String);
+
    -------------------------------
    -- Add_To_Compilation_Buffer --
    -------------------------------
@@ -727,6 +729,16 @@ package body Aforth is
          end;
       end loop;
    end Interpret;
+
+   --------------------
+   -- Interpret_Line --
+   --------------------
+
+   procedure Interpret_Line (Line : in String) is
+   begin
+      Refill_Line (Line);
+      Interpret;
+   end Interpret_Line;
 
    --------------------
    -- Interpret_Mode --
