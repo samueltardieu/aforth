@@ -82,6 +82,8 @@ package body Aforth is
 
    procedure Check_Compile_Only;
 
+   procedure Tick (Name : in String);
+
    -------------------------------
    -- Add_To_Compilation_Buffer --
    -------------------------------
@@ -208,6 +210,16 @@ package body Aforth is
          raise Compile_Only;
       end if;
    end Check_Compile_Only;
+
+   -------------------
+   -- Compile_Comma --
+   -------------------
+
+   procedure Compile_Comma is
+   begin
+      Add_To_Compilation_Buffer (Pop);
+      Add_To_Compilation_Buffer (Execute'Access);
+   end Compile_Comma;
 
    ------------------
    -- Compile_Mode --
@@ -549,6 +561,7 @@ package body Aforth is
    begin
       for I in reverse Dict'Range loop
          if To_Lower (Dict (I) .Name.all) = Lower_Name then
+            pragma Assert (Dict (I) .Action.Kind = Forth_Word);
             return Dict (I) .Action;
          end if;
       end loop;
@@ -925,7 +938,9 @@ package body Aforth is
       elsif Initial_Value /= 0 then
          raise Program_Error;
       end if;
-      Register (Name, (Kind => Number, Immediate => False, Value => Here.all));
+      Start_Definition (Name);
+      Add_To_Compilation_Buffer (Here.all);
+      Semicolon;
       Here.all := Here.all + Size;
    end Make_Variable;
 
@@ -1084,7 +1099,12 @@ package body Aforth is
       Action : Action_Type;
    begin
       Action := Find (Dict, W);
-      Add_To_Compilation_Buffer (Action);
+      if Action.Immediate then
+         Add_To_Compilation_Buffer (Action);
+      else
+         Add_To_Compilation_Buffer (Action.Forth_Proc);
+         Add_To_Compilation_Buffer (Compile_Comma'Access);
+      end if;
    exception
       when Not_Found =>
          begin
@@ -1255,6 +1275,9 @@ package body Aforth is
       Immediate : in Boolean := False)
    is
    begin
+      --  Create a Forth wrapper around an Ada word so that its address
+      --  can be taken and passed to EXECUTE.
+
       Start_Definition (Name);
       Add_To_Compilation_Buffer (Word);
       Semicolon;
@@ -1286,8 +1309,10 @@ package body Aforth is
       Var  : out Integer_32_Access)
    is
    begin
+      Tick (Name);
+      To_Body;
       pragma Warnings (Off);
-      Var := To_Integer_32_Access (Memory (Find (Dict, Name) .Value) 'Access);
+      Var := To_Integer_32_Access (Memory (Pop) 'Access);
       pragma Warnings (On);
    end Remember_Variable;
 
@@ -1300,7 +1325,9 @@ package body Aforth is
       Var  : out Integer_32)
    is
    begin
-      Var := Find (Dict, Name) .Value;
+      Tick (Name);
+      To_Body;
+      Var := Pop;
    end Remember_Variable;
 
    ------------
@@ -1519,6 +1546,25 @@ package body Aforth is
       Push (B);
    end Swap;
 
+   ----------
+   -- Tick --
+   ----------
+
+   procedure Tick (Name : in String) is
+      A : constant Action_Type := Find (Dict, Name);
+   begin
+      Push (A.Forth_Proc);
+   end Tick;
+
+   ----------
+   -- Tick --
+   ----------
+
+   procedure Tick is
+   begin
+      Tick (Word);
+   end Tick;
+
    -----------
    -- Times --
    -----------
@@ -1527,6 +1573,15 @@ package body Aforth is
    begin
       Push (Pop * Pop);
    end Times;
+
+   -------------
+   -- To_Body --
+   -------------
+
+   procedure To_Body is
+   begin
+      Push (Compilation_Buffer (Pop) .Value);
+   end To_Body;
 
    ----------
    -- To_R --
@@ -1647,17 +1702,22 @@ begin
    Return_Stack := new Stack_Type;
    Dict         := new Dictionary_Array (1 .. 0);
 
-   --  Store and register here
+   --  Store and register HERE at position 0 -- bootstrap STATE at position 4
+   pragma Warnings (Off);
+   State := To_Integer_32_Access (Memory (4)'Access);
+   pragma Warnings (On);
    Store (0, 4);
-   Register ("HERE", (Kind => Number, Immediate => False, Value => 0));
+   Start_Definition ("HERE");
+   Add_To_Compilation_Buffer (0);
+   Semicolon;
    Remember_Variable ("HERE", Here);
+   Make_And_Remember_Variable ("STATE", State);
 
    --  Default existing variables
    Make_And_Remember_Variable ("BASE", Base, Initial_Value => 10);
    Make_And_Remember_Variable ("TIB", TIB, Size => 1024);
    Make_And_Remember_Variable ("TIB#", TIB_Count);
    Make_And_Remember_Variable (">IN", IN_Ptr);
-   Make_And_Remember_Variable ("STATE", State);
 
    --  Default Ada words
    Register_Ada_Word ("AGAIN", Again'Access, Immediate => True);
@@ -1667,6 +1727,7 @@ begin
    Register_Ada_Word ("BOUNDS", Bounds'Access);
    Register_Ada_Word ("CHAR", Char'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
+   Register_Ada_Word ("COMPILE,", Compile_Comma'Access);
    Register_Ada_Word ("C""", Cquote'Access, Immediate => True);
    Register_Ada_Word ("C!", Cstore'Access);
    Register_Ada_Word (":", Colon'Access);
@@ -1736,7 +1797,9 @@ begin
    Register_Ada_Word ("S""", Squote'Access, Immediate => True);
    Register_Ada_Word ("SWAP", Swap'Access);
    Register_Ada_Word ("!", Store'Access);
+   Register_Ada_Word ("'", Tick'Access);
    Register_Ada_Word ("*", Times'Access);
+   Register_Ada_Word (">BODY", To_Body'Access);
    Register_Ada_Word (">R", To_R'Access);
    Register_Ada_Word ("2DUP", Two_Dup'Access);
    Register_Ada_Word ("2R>", Two_From_R'Access);

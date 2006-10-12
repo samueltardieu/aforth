@@ -137,6 +137,7 @@ package Aforth is
    procedure Colon;
    procedure Colon_Noname;
    procedure Comma;
+   procedure Compile_Comma;
    procedure Compile_Mode;
    procedure Cquote;
    procedure Cr;
@@ -203,7 +204,9 @@ package Aforth is
    procedure Squote;
    procedure Store;
    procedure Swap;
+   procedure Tick;
    procedure Times;
+   procedure To_Body;
    procedure To_R;
    procedure Two_Dup;
    procedure Two_From_R;
