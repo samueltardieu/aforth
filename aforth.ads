@@ -132,6 +132,7 @@ package Aforth is
    procedure Comma;
    procedure Compile_Mode;
    procedure Cr;
+   procedure Create;
    procedure Cstore;
    procedure Depth;
    procedure Div;
