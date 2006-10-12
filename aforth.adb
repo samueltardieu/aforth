@@ -8,6 +8,9 @@ with Read_Line;
 
 package body Aforth is
 
+   --  Notes:
+   --    - the compilation stack is the data stack
+
    package Integer_32_IO is new Ada.Text_IO.Integer_IO (Integer_32);
    use Integer_32_IO;
 
@@ -600,6 +603,15 @@ package body Aforth is
    -----------------
 
    procedure Forth_Begin is
+
+      --  The structure of the BEGIN/WHILE/REPEAT loop on the compilation
+      --  stack is:
+      --    -1
+      --    addr of first WHILE to patch
+      --    addr of second WHILE to patch
+      --    ...
+      --    addr of the beginning of the loop
+
    begin
       Push (-1);
       Push (Compilation_Index);
