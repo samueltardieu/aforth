@@ -159,6 +159,10 @@ package body Aforth is
    -----------
 
    procedure Ahead is
+
+      --  The compilation stack contains the index of the address to
+      --  patch when the AHEAD is resolved by a THEN.
+
    begin
       Push (Compilation_Index);
       Add_To_Compilation_Buffer (0);
