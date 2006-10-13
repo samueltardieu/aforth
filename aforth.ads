@@ -67,9 +67,13 @@ package Aforth is
 
    procedure Push (X : in Integer_32);
    procedure Push_Unsigned (X : in Unsigned_32);
+   procedure Push_Unsigned_64 (X : in Unsigned_64);
+   procedure Push_64 (X : in Integer_64);
    procedure Push (B : in Boolean);
    function Pop return Integer_32;
    function Pop_Unsigned return Unsigned_32;
+   function Pop_64 return Integer_64;
+   function Pop_Unsigned_64 return Unsigned_64;
    --  Shortcut operating on Data_Stack
 
    type Stack_Access is access Stack_Type;
@@ -176,9 +180,11 @@ package Aforth is
    procedure Interpret_Mode;
    procedure Key;
    procedure Literal;
+   procedure Lshift;
    procedure Minus;
    procedure Minusstore;
    procedure Ms;
+   procedure Mstar;
    procedure Notequal;
    procedure Oneminus;
    procedure Oneplus;
@@ -193,11 +199,14 @@ package Aforth is
    procedure Refill;
    procedure Repeat;
    procedure Roll;
+   procedure Rshift;
+   procedure S_To_D;
    procedure Scale;
    procedure ScaleMod;
    procedure Semicolon;
    procedure Set_Immediate;
    procedure Skip_Blanks;
+   procedure Sm_Slash_Rem;
    procedure Smaller;
    procedure Smallerequal;
    procedure Space;
@@ -212,6 +221,9 @@ package Aforth is
    procedure Two_From_R;
    procedure Two_R_At;
    procedure Two_To_R;
+   procedure U_Smaller;
+   procedure Um_Slash_Mod;
+   procedure Um_Star;
    procedure Unused;
    procedure Word;
 

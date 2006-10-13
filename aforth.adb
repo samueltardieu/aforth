@@ -28,6 +28,10 @@ package body Aforth is
       new Ada.Unchecked_Conversion (Integer_32, Unsigned_32);
    function To_Integer_32 is
       new Ada.Unchecked_Conversion (Unsigned_32, Integer_32);
+   function To_Unsigned_64 is
+      new Ada.Unchecked_Conversion (Integer_64, Unsigned_64);
+   function To_Integer_64 is
+      new Ada.Unchecked_Conversion (Unsigned_64, Integer_64);
 
    procedure Free is
       new Ada.Unchecked_Deallocation (String, String_Access);
@@ -909,6 +913,16 @@ package body Aforth is
       Add_To_Compilation_Buffer (Pop);
    end Literal;
 
+   ------------
+   -- Lshift --
+   ------------
+
+   procedure Lshift is
+      U : constant Natural := Natural (Pop_Unsigned);
+   begin
+      Push (Pop * 2 ** U);
+   end Lshift;
+
    ---------------
    -- Main_Loop --
    ---------------
@@ -1002,6 +1016,15 @@ package body Aforth is
    begin
       delay until Clock + To_Time_Span (Duration (Float (Pop) / 1000.0));
    end Ms;
+
+   -----------
+   -- Mstar --
+   -----------
+
+   procedure Mstar is
+   begin
+      Push_64 (Integer_64 (Pop) * Integer_64 (Pop));
+   end Mstar;
 
    --------------
    -- Notequal --
@@ -1110,6 +1133,15 @@ package body Aforth is
       return Pop (Data_Stack);
    end Pop;
 
+   ------------
+   -- Pop_64 --
+   ------------
+
+   function Pop_64 return Integer_64 is
+   begin
+      return To_Integer_64 (Pop_Unsigned_64);
+   end Pop_64;
+
    ------------------
    -- Pop_Unsigned --
    ------------------
@@ -1118,6 +1150,16 @@ package body Aforth is
    begin
       return To_Unsigned_32 (Pop);
    end Pop_Unsigned;
+
+   ---------------------
+   -- Pop_Unsigned_64 --
+   ---------------------
+
+   function Pop_Unsigned_64 return Unsigned_64 is
+      High : constant Unsigned_64 := Unsigned_64 (Pop_Unsigned) * 2 ** 32;
+   begin
+      return High + Unsigned_64 (Pop_Unsigned);
+   end Pop_Unsigned_64;
 
    --------------
    -- Postpone --
@@ -1179,6 +1221,15 @@ package body Aforth is
       end if;
    end Push;
 
+   -------------
+   -- Push_64 --
+   -------------
+
+   procedure Push_64 (X : in Integer_64) is
+   begin
+      Push_Unsigned_64 (To_Unsigned_64 (X));
+   end Push_64;
+
    -------------------
    -- Push_Unsigned --
    -------------------
@@ -1187,6 +1238,16 @@ package body Aforth is
    begin
       Push (To_Integer_32 (X));
    end Push_Unsigned;
+
+   ----------------------
+   -- Push_Unsigned_64 --
+   ----------------------
+
+   procedure Push_Unsigned_64 (X : in Unsigned_64) is
+   begin
+      Push_Unsigned (Unsigned_32 (X mod (2 ** 32)));
+      Push_Unsigned (Unsigned_32 (X / 2 ** 32));
+   end Push_Unsigned_64;
 
    ----------
    -- Quit --
@@ -1390,6 +1451,25 @@ package body Aforth is
       Data_Stack.Data (Data_Stack.Top) := Moved;
    end Roll;
 
+   ------------
+   -- Rshift --
+   ------------
+
+   procedure Rshift is
+      U : constant Natural := Natural (Pop_Unsigned);
+   begin
+      Push (Pop / 2 ** U);
+   end Rshift;
+
+   ------------
+   -- S_To_D --
+   ------------
+
+   procedure S_To_D is
+   begin
+      Push_64 (Integer_64 (Pop));
+   end S_To_D;
+
    -----------
    -- Scale --
    -----------
@@ -1470,6 +1550,18 @@ package body Aforth is
       end loop;
       IN_Ptr.all := TIB_Count.all;
    end Skip_Blanks;
+
+   ------------------
+   -- Sm_Slash_Rem --
+   ------------------
+
+   procedure Sm_Slash_Rem is
+      N : constant Integer_64 := Integer_64 (Pop);
+      D : constant Integer_64 := Pop_64;
+   begin
+      Push (Integer_32 (D mod N));
+      Push (Integer_32 (D / N));
+   end Sm_Slash_Rem;
 
    -------------
    -- Smaller --
@@ -1684,6 +1776,38 @@ package body Aforth is
       To_R;
    end Two_To_R;
 
+   ---------------
+   -- U_Smaller --
+   ---------------
+
+   procedure U_Smaller is
+      R : constant Unsigned_32 := Pop_Unsigned;
+   begin
+      Push (Pop_Unsigned < R);
+   end U_Smaller;
+
+   ------------------
+   -- Um_Slash_Mod --
+   ------------------
+
+   procedure Um_Slash_Mod is
+      N : constant Unsigned_32 := Pop_Unsigned;
+      D : constant Unsigned_32 := Pop_Unsigned;
+   begin
+      Push_Unsigned (D mod N);
+      Push_Unsigned (D / N);
+   end Um_Slash_Mod;
+
+   -------------
+   -- Um_Star --
+   -------------
+
+   procedure Um_Star is
+   begin
+      Push_Unsigned_64 (Unsigned_64 (Pop_Unsigned) *
+                        Unsigned_64 (Pop_Unsigned));
+   end Um_Star;
+
    ------------
    -- Unused --
    ------------
@@ -1797,10 +1921,12 @@ begin
    Register_Ada_Word ("INCLUDE", Include'Access);
    Register_Ada_Word ("[", Interpret_Mode'Access, Immediate => True);
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
+   Register_Ada_Word ("LSHIFT", Lshift'Access);
    Register_Ada_Word ("KEY", Key'Access);
    Register_Ada_Word ("-", Minus'Access);
    Register_Ada_Word ("-!", Minus'Access);
    Register_Ada_Word ("MS", Ms'Access);
+   Register_Ada_Word ("M*", Mstar'Access);
    Register_Ada_Word ("<>", Notequal'Access);
    Register_Ada_Word ("1-", Oneminus'Access);
    Register_Ada_Word ("1+", Oneplus'Access);
@@ -1815,11 +1941,14 @@ begin
    Register_Ada_Word ("REFILL", Refill'Access);
    Register_Ada_Word ("REPEAT", Repeat'Access, Immediate => True);
    Register_Ada_Word ("ROLL", Roll'Access);
+   Register_Ada_Word ("RSHIFT", Rshift'Access);
+   Register_Ada_Word ("S>D", S_To_D'Access);
    Register_Ada_Word ("*/", Scale'Access);
    Register_Ada_Word ("*/MOD", ScaleMod'Access);
    Register_Ada_Word (";", Semicolon'Access, Immediate => True);
    Register_Ada_Word ("IMMEDIATE", Set_Immediate'Access);
    Register_Ada_Word ("SKIP-BLANKS", Skip_Blanks'Access);
+   Register_Ada_Word ("SM/REM", Sm_Slash_Rem'Access);
    Register_Ada_Word ("<", Smaller'Access);
    Register_Ada_Word ("<=", Smallerequal'Access);
    Register_Ada_Word ("SPACE", Space'Access);
@@ -1834,6 +1963,9 @@ begin
    Register_Ada_Word ("2R>", Two_From_R'Access);
    Register_Ada_Word ("2R@", Two_R_At'Access);
    Register_Ada_Word ("2>R", Two_To_R'Access);
+   Register_Ada_Word ("U<", U_Smaller'Access);
+   Register_Ada_Word ("UM/MOD", Um_Slash_Mod'Access);
+   Register_Ada_Word ("UM*", Um_Star'Access);
    Register_Ada_Word ("UNUSED", Unused'Access);
    Register_Ada_Word ("WORD", Word'Access);
 end Aforth;
