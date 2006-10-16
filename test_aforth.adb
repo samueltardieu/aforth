@@ -1,4 +1,4 @@
-with Aforth;        use Aforth;
+with Aforth; use Aforth;
 with Aforth.Timing;
 pragma Warnings (Off, Aforth.Timing);
 with Aforth.Builtins;
