@@ -1,7 +1,7 @@
-: \ tib# @ >in ! ;
-: constant align create , does> @ ;
-: variable align create 0 , ;
-: 2variable align create 0 , 0 , ;
+: \ TIB# @ >IN ! ;
+: CONSTANT ALIGN CREATE , DOES> @ ;
+: VARIABLE ALIGN CREATE 0 , ;
+: 2VARIABLE ALIGN CREATE 0 , 0 , ;
 : 0= 0 = ;
 : 0< 0 < ;
 : 0> 0 > ;
@@ -12,38 +12,38 @@
 : 2/ 2 / ;
 : 1+ 1 + ;
 : 1- 1 - ;
-: 2drop drop drop ;
-: 2dup over over ;
-: ( [char] ) parse 2drop ;
-: tuck swap over ;
-: +! tuck @ + swap ! ;
-: decimal 10 base ! ;
-: hex 16 base ! ;
-: cell 4 ;
-: cells cell * ;
-: cell+ cell + ;
-: 2! swap over ! cell+ ! ;
-: 2@ dup cell+ @ swap @ ;
-: 2over 3 pick 3 pick ;
-: rot 2 roll ;
-: ?dup dup if dup then ;
-: negate 0 swap - ;
-: abs dup 0< if negate then ;
-: aligned cell 1- + cell / cell * ;
-: allot here +! ;
-: invert negate 1- ;
-: char+ 1 + ;
-: chars ;
-: count dup char+ swap c@ ;
-: nip swap drop ;
-: max 2dup > if drop else nip then ;
-: min 2dup > if nip else drop then ;
-: mod /mod drop ;
-: .( [char] ) parse type ; immediate
-0 constant false
--1 constant true
-align create pad 256 allot
-: ['] ' postpone literal ; immediate
-: value constant ;
-: to ' >body state @ if postpone literal postpone ! else ! then ; immediate
-: -rot rot rot ;
+: 2DROP DROP DROP ;
+: 2DUP OVER OVER ;
+: ( [CHAR] ) PARSE 2DROP ;
+: TUCK SWAP OVER ;
+: +! TUCK @ + SWAP ! ;
+: DECIMAL 10 BASE ! ;
+: HEX 16 BASE ! ;
+: CELL 4 ;
+: CELLS CELL * ;
+: CELL+ CELL + ;
+: 2! SWAP OVER ! CELL+ ! ;
+: 2@ DUP CELL+ @ SWAP @ ;
+: 2OVER 3 PICK 3 PICK ;
+: ROT 2 ROLL ;
+: ?DUP DUP IF DUP THEN ;
+: NEGATE 0 SWAP - ;
+: ABS DUP 0< IF NEGATE THEN ;
+: ALIGNED CELL 1- + CELL / CELL * ;
+: ALLOT HERE +! ;
+: INVERT NEGATE 1- ;
+: CHAR+ 1 + ;
+: CHARS ;
+: COUNT DUP CHAR+ SWAP C@ ;
+: NIP SWAP DROP ;
+: MAX 2DUP > IF DROP ELSE NIP THEN ;
+: MIN 2DUP > IF NIP ELSE DROP THEN ;
+: MOD /MOD DROP ;
+: .( [CHAR] ) PARSE TYPE ; IMMEDIATE
+0 CONSTANT FALSE
+-1 CONSTANT TRUE
+ALIGN CREATE PAD 256 ALLOT
+: ['] ' POSTPONE LITERAL ; IMMEDIATE
+: VALUE CONSTANT ;
+: TO ' >BODY STATE @ IF POSTPONE LITERAL POSTPONE ! ELSE ! THEN ; IMMEDIATE
+: -ROT ROT ROT ;
