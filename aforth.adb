@@ -1869,7 +1869,7 @@ package body Aforth is
    procedure Start_Definition (Name : in String) is
    begin
       if Name /= "" then
-         Current_Name              := new String'(Name);
+         Current_Name := new String'(Name);
       end if;
       Current_Action.Immediate  := False;
       Current_Action.Forth_Proc := Compilation_Index;
