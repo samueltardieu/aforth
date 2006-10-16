@@ -4,66 +4,10 @@ package Aforth is
 
    pragma Elaborate_Body;
 
-   type Action_Kind is (Ada_Word, Forth_Word, Number);
-
-   type Ada_Word_Access is access procedure;
-
-   type Forth_Word_Array;
-
-   type Forth_Word_Access is access Forth_Word_Array;
-
-   type Action_Type (Kind : Action_Kind := Number) is record
-      Immediate : Boolean;
-      case Kind is
-         when Ada_Word =>
-            Ada_Proc   : Ada_Word_Access;
-         when Forth_Word =>
-            Forth_Proc : Integer_32;
-         when Number =>
-            Value      : Integer_32;
-      end case;
-   end record;
-
-   type Forth_Word_Array is array (Positive range <>) of Action_Type;
-
-   type String_Access is access String;
-
-   type Dictionary_Entry is record
-      Name   : String_Access;
-      Action : Action_Type;
-   end record;
-
-   type Dictionary_Array is array (Positive range <>) of Dictionary_Entry;
-
-   type Dictionary_Access is access Dictionary_Array;
-
-   procedure Register (Name   : in String;
-                       Action : in Action_Type);
-
-   procedure Set_Last_Immediate (Dict : in Dictionary_Access);
-
-   Not_Found                    : exception;
-
-   function Find (Dict : Dictionary_Access; Name : String) return Action_Type;
-   --  May raise Not_Found
-
    type Integer_32_Array is array (Positive range <>) of Integer_32;
 
    Stack_Overflow  : exception;
    Stack_Underflow : exception;
-
-   Stack_Max_Depth : constant := 50;
-
-   type Stack_Type is record
-      Data : Integer_32_Array (1 .. Stack_Max_Depth);
-      Top  : Natural range 0 .. Stack_Max_Depth := 0;
-   end record;
-
-   procedure Push (S : access Stack_Type; X : in Integer_32);
-   --  May raise stack overflow
-
-   function Pop (S : access Stack_Type) return Integer_32;
-   --  May raise stack underflow
 
    procedure Push (X : in Integer_32);
    procedure Push_Unsigned (X : in Unsigned_32);
@@ -76,15 +20,11 @@ package Aforth is
    function Pop_Unsigned_64 return Unsigned_64;
    --  Shortcut operating on Data_Stack
 
+   type Stack_Type is limited private;
    type Stack_Access is access Stack_Type;
 
    Data_Stack   : Stack_Access;
    Return_Stack : Stack_Access;
-   Dict         : Dictionary_Access;
-
-   type Byte_Array is array (Integer_32 range <>) of aliased Unsigned_8;
-
-   Memory : Byte_Array (0 .. 65535) := (others => 0);
 
    type Integer_32_Access is access all Integer_32;
 
@@ -109,6 +49,8 @@ package Aforth is
       Size          : in Integer_32 := 4;
       Initial_Value : in Integer_32 := 0);
 
+   type Ada_Word_Access is access procedure;
+
    procedure Register_Ada_Word
      (Name      : in String;
       Word      : in Ada_Word_Access;
@@ -117,11 +59,6 @@ package Aforth is
    procedure Register_Constant
      (Name  : in String;
       Value : in Integer_32);
-
-   Compilation_Buffer : array (Integer_32'(1) .. 16384) of Action_Type;
-   Compilation_Index  : Integer_32 := 1;
-
-   procedure Add_To_Compilation_Buffer (Action : in Action_Type);
 
    procedure Include_File (File_Name : in String);
 
@@ -235,5 +172,14 @@ package Aforth is
    procedure Unloop;
    procedure Unused;
    procedure Word;
+
+private
+
+   Stack_Max_Depth : constant := 50;
+
+   type Stack_Type is limited record
+      Data : Integer_32_Array (1 .. Stack_Max_Depth);
+      Top  : Natural range 0 .. Stack_Max_Depth := 0;
+   end record;
 
 end Aforth;

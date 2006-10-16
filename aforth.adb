@@ -11,11 +11,55 @@ package body Aforth is
    --  Notes:
    --    - the compilation stack is the data stack
 
+   type Action_Kind is (Ada_Word, Forth_Word, Number);
+
+   type Action_Type (Kind : Action_Kind := Number) is record
+      Immediate : Boolean;
+      case Kind is
+         when Ada_Word =>
+            Ada_Proc   : Ada_Word_Access;
+         when Forth_Word =>
+            Forth_Proc : Integer_32;
+         when Number =>
+            Value      : Integer_32;
+      end case;
+   end record;
+
+   procedure Register (Name   : in String;
+                       Action : in Action_Type);
+
+   Not_Found : exception;
+
+   function Find (Name : String) return Action_Type;
+   --  May raise Not_Found
+
+   Compilation_Buffer : array (Integer_32'(1) .. 16384) of Action_Type;
+   Compilation_Index  : Integer_32 := 1;
+
+   procedure Add_To_Compilation_Buffer (Action : in Action_Type);
+
    package Integer_32_IO is new Ada.Text_IO.Integer_IO (Integer_32);
    use Integer_32_IO;
 
+   type String_Access is access String;
+
+   type Dictionary_Entry is record
+      Name   : String_Access;
+      Action : Action_Type;
+   end record;
+
+   type Dictionary_Array is array (Positive range <>) of Dictionary_Entry;
+
+   type Dictionary_Access is access Dictionary_Array;
+
    procedure Free is
       new Ada.Unchecked_Deallocation (Dictionary_Array, Dictionary_Access);
+
+   Dict : Dictionary_Access;
+
+   type Byte_Array is array (Integer_32 range <>) of aliased Unsigned_8;
+
+   Memory : Byte_Array (0 .. 65535) := (others => 0);
 
    type Byte_Access is access all Unsigned_8;
 
@@ -35,6 +79,12 @@ package body Aforth is
 
    procedure Free is
       new Ada.Unchecked_Deallocation (String, String_Access);
+
+   procedure Push (S : access Stack_Type; X : in Integer_32);
+   --  May raise stack overflow
+
+   function Pop (S : access Stack_Type) return Integer_32;
+   --  May raise stack underflow
 
    Already_Handled : exception;
 
@@ -96,6 +146,8 @@ package body Aforth is
    procedure Tick (Name : in String);
 
    procedure Check_Control_Structure (Reference : in Integer_32);
+
+   procedure Set_Last_Immediate (Dict : in Dictionary_Access);
 
    -------------------------------
    -- Add_To_Compilation_Buffer --
@@ -601,7 +653,7 @@ package body Aforth is
    -- Find --
    ----------
 
-   function Find (Dict : Dictionary_Access; Name : String) return Action_Type
+   function Find (Name : String) return Action_Type
    is
       Lower_Name : constant String := To_Lower (Name);
    begin
@@ -875,7 +927,7 @@ package body Aforth is
             end if;
             if State.all = 0 then
                begin
-                  A := Find (Dict, W);
+                  A := Find (W);
                   A.Immediate := True;
                   Execute_Action (A);
                exception
@@ -890,7 +942,7 @@ package body Aforth is
                end;
             else
                begin
-                  A := Find (Dict, W);
+                  A := Find (W);
                   if A.Immediate then
                      Execute_Action (A);
                   else
@@ -1295,7 +1347,7 @@ package body Aforth is
       W      : constant String := Word;
       Action : Action_Type;
    begin
-      Action := Find (Dict, W);
+      Action := Find (W);
       if Action.Immediate then
          Add_To_Compilation_Buffer (Action);
       else
@@ -1877,7 +1929,7 @@ package body Aforth is
    ----------
 
    procedure Tick (Name : in String) is
-      A : constant Action_Type := Find (Dict, Name);
+      A : constant Action_Type := Find (Name);
    begin
       Push (A.Forth_Proc);
    end Tick;
