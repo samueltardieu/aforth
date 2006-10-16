@@ -125,7 +125,6 @@ package Aforth is
    procedure Lshift;
    procedure Minus;
    procedure Minusstore;
-   procedure Ms;
    procedure Mstar;
    procedure Notequal;
    procedure Oneminus;
