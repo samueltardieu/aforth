@@ -183,6 +183,7 @@ package Aforth is
    procedure Interpret_Mode;
    procedure J;
    procedure Key;
+   procedure Leave;
    procedure Literal;
    procedure Lshift;
    procedure Minus;

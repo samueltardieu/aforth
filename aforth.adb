@@ -49,9 +49,9 @@ package body Aforth is
                                          Immediate  => True,
                                          Forth_Proc => -1);
 
-   Forward_Reference  : constant := -1;
-   Backward_Reference : constant := -2;
-   Do_Loop_Reference  : constant := -3;
+   Forward_Reference  : constant := -100;
+   Backward_Reference : constant := -101;
+   Do_Loop_Reference  : constant := -102;
 
    procedure Remember_Variable
      (Name : in String;
@@ -971,6 +971,32 @@ package body Aforth is
       Push (Integer_32 (Character'Pos (C)));
    end Key;
 
+   -----------
+   -- Leave --
+   -----------
+
+   procedure Leave is
+   begin
+      --  Loop for Do_Loop_Reference on the stack
+
+      for I in reverse Data_Stack.Data'First .. Data_Stack.Top loop
+         if Data_Stack.Data (I) = Do_Loop_Reference then
+
+            --  Insert the leave information at the proper place
+
+            Data_Stack.Data (I .. Data_Stack.Top + 1) :=
+              Data_Stack.Data (I - 1 .. Data_Stack.Top);
+            Data_Stack.Top := Data_Stack.Top + 1;
+            Data_Stack.Data (I - 1) := Compilation_Index;
+            Add_To_Compilation_Buffer (0);
+            Add_To_Compilation_Buffer (Jump'Access);
+            return;
+         end if;
+      end loop;
+
+      raise Unbalanced_Control_Structure;
+   end Leave;
+
    -------------
    -- Literal --
    -------------
@@ -1156,6 +1182,8 @@ package body Aforth is
 
    procedure Patch_Jump (To_Patch : in Integer_32; Target : in Integer_32) is
    begin
+      pragma Assert (To_Patch < Compilation_Index);
+      pragma Assert (Target <= Compilation_Index);
       Compilation_Buffer (To_Patch) .Value := Target;
    end Patch_Jump;
 
@@ -2053,6 +2081,7 @@ begin
    Register_Ada_Word ("J", J'Access);
    Register_Ada_Word ("INCLUDE", Include'Access);
    Register_Ada_Word ("[", Interpret_Mode'Access, Immediate => True);
+   Register_Ada_Word ("LEAVE", Leave'Access, Immediate => True);
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
    Register_Ada_Word ("LSHIFT", Lshift'Access);
    Register_Ada_Word ("KEY", Key'Access);
