@@ -42,7 +42,7 @@ package Aforth is
 
    procedure Set_Last_Immediate (Dict : in Dictionary_Access);
 
-   Not_Found : exception;
+   Not_Found                    : exception;
 
    function Find (Dict : Dictionary_Access; Name : String) return Action_Type;
    --  May raise Not_Found
@@ -127,7 +127,8 @@ package Aforth is
 
    procedure Interpret_Line (Line : in String);
 
-   Compile_Only : exception;
+   Compile_Only                 : exception;
+   Unbalanced_Control_Structure : exception;
 
    --  Predefined Ada words
    procedure Again;
@@ -224,6 +225,7 @@ package Aforth is
    procedure Two_Dup;
    procedure Two_From_R;
    procedure Two_R_At;
+   procedure Two_Swap;
    procedure Two_To_R;
    procedure U_Smaller;
    procedure Um_Slash_Mod;

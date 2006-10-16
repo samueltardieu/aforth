@@ -1,3 +1,4 @@
+: \ tib# @ >in ! ;
 : constant align create , does> @ ;
 : variable align create 0 , ;
 : 2variable align create 0 , 0 , ;
@@ -14,7 +15,6 @@
 : 2drop drop drop ;
 : 2dup over over ;
 : ( [char] ) parse 2drop ;
-: \ tib# @ >in ! ;
 : tuck swap over ;
 : +! tuck @ + swap ! ;
 : decimal 10 base ! ;
@@ -25,7 +25,6 @@
 : 2! swap over ! cell+ ! ;
 : 2@ dup cell+ @ swap @ ;
 : 2over 3 pick 3 pick ;
-: 2swap 3 roll 3 roll ;
 : rot 2 roll ;
 : ?dup dup if dup then ;
 : negate 0 swap - ;

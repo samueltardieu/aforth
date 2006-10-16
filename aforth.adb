@@ -49,6 +49,10 @@ package body Aforth is
                                          Immediate  => True,
                                          Forth_Proc => -1);
 
+   Forward_Reference  : constant := -1;
+   Backward_Reference : constant := -2;
+   Do_Loop_Reference  : constant := -3;
+
    procedure Remember_Variable
      (Name : in String;
       Var  : out Integer_32_Access);
@@ -90,6 +94,8 @@ package body Aforth is
    procedure Check_Compile_Only;
 
    procedure Tick (Name : in String);
+
+   procedure Check_Control_Structure (Reference : in Integer_32);
 
    -------------------------------
    -- Add_To_Compilation_Buffer --
@@ -165,6 +171,7 @@ package body Aforth is
 
    begin
       Push (Compilation_Index);
+      Push (Forward_Reference);
       Add_To_Compilation_Buffer (0);
       Add_To_Compilation_Buffer (Jump'Access);
    end Ahead;
@@ -238,6 +245,17 @@ package body Aforth is
          raise Compile_Only;
       end if;
    end Check_Compile_Only;
+
+   -----------------------------
+   -- Check_Control_Structure --
+   -----------------------------
+
+   procedure Check_Control_Structure (Reference : in Integer_32) is
+   begin
+      if Pop /= Reference then
+         raise Unbalanced_Control_Structure;
+      end if;
+   end Check_Control_Structure;
 
    -------------------
    -- Compile_Comma --
@@ -619,10 +637,12 @@ package body Aforth is
       --    addr of second WHILE to patch
       --    ...
       --    addr of the beginning of the loop
+      --    Backward_Reference
 
    begin
       Push (-1);
       Push (Compilation_Index);
+      Push (Backward_Reference);
    end Forth_Begin;
 
    --------------
@@ -638,11 +658,13 @@ package body Aforth is
       --    addr of the second ?DO/LEAVE
       --    ...
       --    addr of the beginning of the loop
+      --    Do_Loop_Reference
 
    begin
       Add_To_Compilation_Buffer (Two_To_R'Access);
       Push (-1);
       Push (Compilation_Index);
+      Push (Do_Loop_Reference);
    end Forth_Do;
 
    ----------------
@@ -652,7 +674,7 @@ package body Aforth is
    procedure Forth_Else is
    begin
       Ahead;
-      Swap;
+      Two_Swap;
       Forth_Then;
    end Forth_Else;
 
@@ -663,6 +685,7 @@ package body Aforth is
    procedure Forth_If is
    begin
       Push (Compilation_Index);
+      Push (Forward_Reference);
       Add_To_Compilation_Buffer (0);
       Add_To_Compilation_Buffer (Jump_If_False'Access);
    end Forth_If;
@@ -702,6 +725,7 @@ package body Aforth is
 
    procedure Forth_Then is
    begin
+      Check_Control_Structure (Forward_Reference);
       Patch_Jump (To_Patch => Pop, Target => Compilation_Index);
    end Forth_Then;
 
@@ -1161,6 +1185,8 @@ package body Aforth is
    procedure Plus_Loop is
       To_Patch : Integer_32;
    begin
+      Check_Control_Structure (Do_Loop_Reference);
+
       Add_To_Compilation_Buffer (From_R'Access);
       Add_To_Compilation_Buffer (Plus'Access);
       Add_To_Compilation_Buffer (From_R'Access);
@@ -1498,6 +1524,7 @@ package body Aforth is
 
    procedure Repeat is
    begin
+      Check_Control_Structure (Backward_Reference);
       Literal;
       Add_To_Compilation_Buffer (Jump'Access);
       loop
@@ -1838,6 +1865,28 @@ package body Aforth is
    end Two_R_At;
 
    --------------
+   -- Two_Swap --
+   --------------
+
+   procedure Two_Swap is
+
+      procedure Swap (X, Y : in out Integer_32);
+
+      procedure Swap (X, Y : in out Integer_32) is
+         Temp : constant Integer_32 := X;
+      begin
+         X := Y;
+         Y := Temp;
+      end Swap;
+
+   begin
+      Swap (Data_Stack.Data (Data_Stack.Top),
+            Data_Stack.Data (Data_Stack.Top - 2));
+      Swap (Data_Stack.Data (Data_Stack.Top - 1),
+            Data_Stack.Data (Data_Stack.Top - 3));
+   end Two_Swap;
+
+   --------------
    -- Two_To_R --
    --------------
 
@@ -2048,6 +2097,7 @@ begin
    Register_Ada_Word ("2DUP", Two_Dup'Access);
    Register_Ada_Word ("2R>", Two_From_R'Access);
    Register_Ada_Word ("2R@", Two_R_At'Access);
+   Register_Ada_Word ("2SWAP", Two_Swap'Access);
    Register_Ada_Word ("2>R", Two_To_R'Access);
    Register_Ada_Word ("U<", U_Smaller'Access);
    Register_Ada_Word ("UM/MOD", Um_Slash_Mod'Access);
