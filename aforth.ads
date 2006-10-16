@@ -209,6 +209,7 @@ package Aforth is
    procedure S_To_D;
    procedure Scale;
    procedure ScaleMod;
+   procedure See;
    procedure Semicolon;
    procedure Set_Immediate;
    procedure Skip_Blanks;

@@ -46,3 +46,4 @@ align create pad 256 allot
 : ['] ' postpone literal ; immediate
 : value constant ;
 : to ' >body state @ if postpone literal postpone ! else ! then ; immediate
+: -rot rot rot ;

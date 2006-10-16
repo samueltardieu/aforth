@@ -1622,6 +1622,76 @@ package body Aforth is
       Push (Integer_32 (A * B / C));
    end ScaleMod;
 
+   ---------
+   -- See --
+   ---------
+
+   procedure See is
+      Index  : Integer_32;
+      Action : Action_Type;
+      Found  : Boolean;
+   begin
+      Tick;
+      Index := Pop;
+      loop
+         Found := False;
+         Put (Integer_32'Image (Index) & ": ");
+         Action := Compilation_Buffer (Index);
+         if Action = Forth_Exit then
+            Put_Line ("EXIT");
+            exit;
+         end if;
+         case Action.Kind is
+            when Number =>
+               Found := True;
+               Put_Line (Integer_32'Image (Action.Value));
+            when Forth_Word =>
+               for I in reverse Dict'Range loop
+                  if Dict (I) .Action.Kind = Forth_Word and then
+                    Dict (I) .Action.Forth_Proc = Action.Forth_Proc
+                  then
+                     Found := True;
+                     Put_Line (Dict (I) .Name.all);
+                     exit;
+                  end if;
+               end loop;
+            when Ada_Word =>
+               if Action.Ada_Proc = Jump'Access then
+                  Found := True;
+                  Put_Line ("<JUMP>");
+               elsif Action.Ada_Proc = Jump_If_False'Access then
+                  Found := True;
+                  Put_Line ("<JUMP IF FALSE>");
+               else
+                  for I in reverse Dict'Range loop
+                     if Dict (I) .Action.Kind = Forth_Word then
+                        declare
+                           Idx : constant Integer_32 :=
+                             Dict (I) .Action.Forth_Proc;
+                           A : constant Action_Type :=
+                             Compilation_Buffer (Idx);
+                        begin
+                           if A.Kind = Ada_Word and then
+                             A.Ada_Proc = Action.Ada_Proc and then
+                             Compilation_Buffer (Idx + 1) = Forth_Exit
+                           then
+                              Found := True;
+                              Put_Line (Dict (I) .Name.all &
+                                        " <Ada primitive>");
+                              exit;
+                           end if;
+                        end;
+                     end if;
+                  end loop;
+               end if;
+         end case;
+         if not Found then
+            Put_Line ("<unknown control word>");
+         end if;
+         Index := Index + 1;
+      end loop;
+   end See;
+
    ---------------
    -- Semicolon --
    ---------------
@@ -2086,7 +2156,7 @@ begin
    Register_Ada_Word ("LSHIFT", Lshift'Access);
    Register_Ada_Word ("KEY", Key'Access);
    Register_Ada_Word ("-", Minus'Access);
-   Register_Ada_Word ("-!", Minus'Access);
+   Register_Ada_Word ("-!", Minusstore'Access);
    Register_Ada_Word ("MS", Ms'Access);
    Register_Ada_Word ("M*", Mstar'Access);
    Register_Ada_Word ("<>", Notequal'Access);
@@ -2109,6 +2179,7 @@ begin
    Register_Ada_Word ("S>D", S_To_D'Access);
    Register_Ada_Word ("*/", Scale'Access);
    Register_Ada_Word ("*/MOD", ScaleMod'Access);
+   Register_Ada_Word ("SEE", See'Access);
    Register_Ada_Word (";", Semicolon'Access, Immediate => True);
    Register_Ada_Word ("IMMEDIATE", Set_Immediate'Access);
    Register_Ada_Word ("SKIP-BLANKS", Skip_Blanks'Access);
