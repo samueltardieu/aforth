@@ -1643,8 +1643,16 @@ package body Aforth is
          end if;
          case Action.Kind is
             when Number =>
-               Found := True;
-               Put_Line (Integer_32'Image (Action.Value));
+               declare
+                  S : constant String := Integer_32'Image (Action.Value);
+               begin
+                  Found := True;
+                  if Action.Value >= 0 then
+                     Put_Line (S (2 .. S'Last));
+                  else
+                     Put_Line (S);
+                  end if;
+               end;
             when Forth_Word =>
                for I in reverse Dict'Range loop
                   if Dict (I) .Action.Kind = Forth_Word and then
