@@ -1,6 +1,6 @@
 #! /usr/bin/python
 #
-# Usage: embed input_forth_file output_ada_name
+# Usage: embed input_forth_file output_ada_unit
 #
 
 import sys
@@ -8,16 +8,19 @@ import sys
 try: ada = sys.argv[2]
 except IndexError: ada = sys.argv[1][:-3].capitalize()
 
-lower = ada.lower()
-open("%s.ads" % lower, "w").write("""package %s is
+adafile = ada.lower().replace('.', '-')
+
+open("%s.ads" % adafile, "w").write("""package %s is
    pragma Elaborate_Body;
 end %s;
 """ % (ada, ada))
 
-outbody = open("%s.adb" % lower, "w")
-outbody.write("""with Aforth;
-pragma Elaborate_All (Aforth);
-package body %s is
+outbody = open("%s.adb" % adafile, "w")
+if not adafile.startswith('aforth-'):
+    outbody.write("""with Aforth;
+pragma Elaborate_All (Aforth);""")
+    
+outbody.write("""package body %s is
 begin
 """ % ada)
 

@@ -12,7 +12,10 @@ install:: $(PROGRAMS)
 %.ads %.adb: %.fs
 	$(PYTHON) embed.py $<
 
-test_aforth: never builtins.ads builtins.adb
+aforth-builtins.ads aforth-builtins.adb: builtins.fs
+	$(PYTHON) embed.py $< Aforth.Builtins
+
+test_aforth: never aforth-builtins.ads aforth-builtins.adb
 	$(GNATMAKE) $(GNATCFLAGS) test_aforth
 
 clean:: never

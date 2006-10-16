@@ -1,8 +1,8 @@
 with Aforth;        use Aforth;
-with Aforth.Timing; use Aforth.Timing;
-pragma Warnings (Off, Timing);
-with Builtins;
-pragma Warnings (Off, Builtins);
+with Aforth.Timing;
+pragma Warnings (Off, Aforth.Timing);
+with Aforth.Builtins;
+pragma Warnings (Off, Aforth.Builtins);
 
 procedure Test_Aforth is
 begin
