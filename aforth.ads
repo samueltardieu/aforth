@@ -171,6 +171,7 @@ package Aforth is
    procedure Unloop;
    procedure Unused;
    procedure Word;
+   procedure Words;
 
 private
 

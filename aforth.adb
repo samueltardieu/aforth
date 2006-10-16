@@ -2131,6 +2131,25 @@ package body Aforth is
       return To_String;
    end Word;
 
+   -----------
+   -- Words --
+   -----------
+
+   procedure Words is
+      Len : Natural := 0;
+   begin
+      for I in Dict.all'Range loop
+         Len := Len + Dict (I) .Name'Length + 1;
+         if Len > 75 then
+            New_Line;
+            Len := Dict (I) .Name'Length;
+         elsif I /= Dict.all'First then
+            Put (' ');
+         end if;
+         Put (Dict (I) .Name.all);
+      end loop;
+   end Words;
+
 begin
    Data_Stack   := new Stack_Type;
    Return_Stack := new Stack_Type;
@@ -2257,4 +2276,5 @@ begin
    Register_Ada_Word ("UNLOOP", Unloop'Access);
    Register_Ada_Word ("UNUSED", Unused'Access);
    Register_Ada_Word ("WORD", Word'Access);
+   Register_Ada_Word ("WORDS", Words'Access);
 end Aforth;
