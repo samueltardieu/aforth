@@ -625,6 +625,26 @@ package body Aforth is
       Push (Compilation_Index);
    end Forth_Begin;
 
+   --------------
+   -- Forth_Do --
+   --------------
+
+   procedure Forth_Do is
+
+      --  The structure of a DO/?DO - LOOP/+LOOP on the compilation stack
+      --  is:
+      --    -1
+      --    addr of the first ?DO/LEAVE
+      --    addr of the second ?DO/LEAVE
+      --    ...
+      --    addr of the beginning of the loop
+
+   begin
+      Add_To_Compilation_Buffer (Two_To_R'Access);
+      Push (-1);
+      Push (Compilation_Index);
+   end Forth_Do;
+
    ----------------
    -- Forth_Else --
    ----------------
@@ -646,6 +666,16 @@ package body Aforth is
       Add_To_Compilation_Buffer (0);
       Add_To_Compilation_Buffer (Jump_If_False'Access);
    end Forth_If;
+
+   ----------------
+   -- Forth_Loop --
+   ----------------
+
+   procedure Forth_Loop is
+   begin
+      Add_To_Compilation_Buffer (1);
+      Plus_Loop;
+   end Forth_Loop;
 
    ---------------
    -- Forth_Mod --
@@ -875,6 +905,15 @@ package body Aforth is
    begin
       State.all := 0;
    end Interpret_Mode;
+
+   -------
+   -- J --
+   -------
+
+   procedure J is
+   begin
+      Push (Return_Stack.Data (Return_Stack.Top - 2));
+   end J;
 
    ----------
    -- Jump --
@@ -1114,6 +1153,35 @@ package body Aforth is
    begin
       Push (Pop + Pop);
    end Plus;
+
+   ---------------
+   -- Plus_Loop --
+   ---------------
+
+   procedure Plus_Loop is
+      To_Patch : Integer_32;
+   begin
+      Add_To_Compilation_Buffer (From_R'Access);
+      Add_To_Compilation_Buffer (Plus'Access);
+      Add_To_Compilation_Buffer (From_R'Access);
+      Add_To_Compilation_Buffer (Two_Dup'Access);
+      Add_To_Compilation_Buffer (To_R'Access);
+      Add_To_Compilation_Buffer (To_R'Access);
+      Add_To_Compilation_Buffer (Greaterequal'Access);
+      Add_To_Compilation_Buffer (Pop);
+      Add_To_Compilation_Buffer (Jump_If_False'Access);
+
+      --  Resolve forward references
+
+      loop
+         To_Patch := Pop;
+         exit when To_Patch = -1;
+         Patch_Jump (To_Patch => To_Patch, Target => Compilation_Index);
+      end loop;
+
+      Add_To_Compilation_Buffer (Unloop'Access);
+
+   end Plus_Loop;
 
    ---------
    -- Pop --
@@ -1813,6 +1881,15 @@ package body Aforth is
    end Um_Star;
 
    ------------
+   -- Unloop --
+   ------------
+
+   procedure Unloop is
+   begin
+      Return_Stack.Top := Return_Stack.Top - 2;
+   end Unloop;
+
+   ------------
    -- Unused --
    ------------
 
@@ -1909,9 +1986,11 @@ begin
    Register_Ada_Word ("@", Fetch'Access);
    Register_Ada_Word ("AND", Forth_And'Access);
    Register_Ada_Word ("BEGIN", Forth_Begin'Access, Immediate => True);
+   Register_Ada_Word ("DO", Forth_Do'Access, Immediate => True);
    Register_Ada_Word ("ELSE", Forth_Else'Access, Immediate => True);
    Register_Ada_Word ("[CHAR]", Ichar'Access, Immediate => True);
    Register_Ada_Word ("IF", Forth_If'Access, Immediate => True);
+   Register_Ada_Word ("LOOP", Forth_Loop'Access, Immediate => True);
    Register_Ada_Word ("MOD", Forth_Mod'Access);
    Register_Ada_Word ("OR", Forth_Or'Access);
    Register_Ada_Word ("THEN", Forth_Then'Access, Immediate => True);
@@ -1922,6 +2001,7 @@ begin
    Register_Ada_Word ("R>", From_R'Access);
    Register_Ada_Word (">", Greater'Access);
    Register_Ada_Word (">=", Greaterequal'Access);
+   Register_Ada_Word ("J", J'Access);
    Register_Ada_Word ("INCLUDE", Include'Access);
    Register_Ada_Word ("[", Interpret_Mode'Access, Immediate => True);
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
@@ -1938,8 +2018,10 @@ begin
    Register_Ada_Word ("PARSE", Parse'Access);
    Register_Ada_Word ("PICK", Pick'Access);
    Register_Ada_Word ("+", Plus'Access);
+   Register_Ada_Word ("+LOOP", Plus_Loop'Access);
    Register_Ada_Word ("POSTPONE", Postpone'Access, Immediate => True);
    Register_Ada_Word ("QUIT", Quit'Access);
+   Register_Ada_Word ("I", R_At'Access);
    Register_Ada_Word ("R@", R_At'Access);
    Register_Ada_Word ("RECURSE", Recurse'Access, Immediate => True);
    Register_Ada_Word ("REFILL", Refill'Access);
@@ -1970,6 +2052,7 @@ begin
    Register_Ada_Word ("U<", U_Smaller'Access);
    Register_Ada_Word ("UM/MOD", Um_Slash_Mod'Access);
    Register_Ada_Word ("UM*", Um_Star'Access);
+   Register_Ada_Word ("UNLOOP", Unloop'Access);
    Register_Ada_Word ("UNUSED", Unused'Access);
    Register_Ada_Word ("WORD", Word'Access);
 end Aforth;

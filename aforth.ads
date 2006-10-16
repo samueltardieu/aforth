@@ -162,8 +162,10 @@ package Aforth is
    procedure Fetch;
    procedure Forth_And;
    procedure Forth_Begin;
+   procedure Forth_Do;
    procedure Forth_Else;
    procedure Forth_If;
+   procedure Forth_Loop;
    procedure Forth_Mod;
    procedure Forth_Or;
    procedure Forth_Then;
@@ -178,6 +180,7 @@ package Aforth is
    procedure Include;
    procedure Interpret;
    procedure Interpret_Mode;
+   procedure J;
    procedure Key;
    procedure Literal;
    procedure Lshift;
@@ -192,6 +195,7 @@ package Aforth is
    procedure Parse;
    procedure Pick;
    procedure Plus;
+   procedure Plus_Loop;
    procedure Postpone;
    procedure Quit;
    procedure R_At;
@@ -224,6 +228,7 @@ package Aforth is
    procedure U_Smaller;
    procedure Um_Slash_Mod;
    procedure Um_Star;
+   procedure Unloop;
    procedure Unused;
    procedure Word;
 
