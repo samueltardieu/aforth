@@ -1712,6 +1712,9 @@ package body Aforth is
                elsif Action.Ada_Proc = Jump_If_False'Access then
                   Found := True;
                   Put_Line ("<JUMP IF FALSE>");
+               elsif Action.Ada_Proc = DoDoes'Access then
+                  Found := True;
+                  Put_Line ("<DO DOES>");
                else
                   for I in reverse Dict'Range loop
                      if Dict (I) .Action.Kind = Forth_Word then
