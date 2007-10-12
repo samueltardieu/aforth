@@ -3,6 +3,7 @@
 : VARIABLE ALIGN CREATE 0 , ;
 : 2VARIABLE ALIGN CREATE 0 , 0 , ;
 : 0= 0 = ;
+: <> = 0= ;
 : 0< 0 < ;
 : 0> 0 > ;
 : 0<= 0 <= ;

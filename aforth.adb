@@ -1145,15 +1145,6 @@ package body Aforth is
    end Mstar;
 
    --------------
-   -- Notequal --
-   --------------
-
-   procedure Notequal is
-   begin
-      Push (Pop /= Pop);
-   end Notequal;
-
-   --------------
    -- Oneminus --
    --------------
 
@@ -2219,7 +2210,6 @@ begin
    Register_Ada_Word ("-", Minus'Access);
    Register_Ada_Word ("-!", Minusstore'Access);
    Register_Ada_Word ("M*", Mstar'Access);
-   Register_Ada_Word ("<>", Notequal'Access);
    Register_Ada_Word ("1-", Oneminus'Access);
    Register_Ada_Word ("1+", Oneplus'Access);
    Register_Ada_Word ("OVER", Over'Access);

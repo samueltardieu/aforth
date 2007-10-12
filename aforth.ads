@@ -125,7 +125,6 @@ package Aforth is
    procedure Minus;
    procedure Minusstore;
    procedure Mstar;
-   procedure Notequal;
    procedure Oneminus;
    procedure Oneplus;
    procedure Over;
