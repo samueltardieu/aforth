@@ -142,7 +142,6 @@ package Aforth is
    procedure Roll;
    procedure Rshift;
    procedure S_To_D;
-   procedure Scale;
    procedure ScaleMod;
    procedure See;
    procedure Semicolon;

@@ -1623,18 +1623,6 @@ package body Aforth is
       Push_64 (Integer_64 (Pop));
    end S_To_D;
 
-   -----------
-   -- Scale --
-   -----------
-
-   procedure Scale is
-      C : constant Integer_64 := Integer_64 (Pop);
-      B : constant Integer_64 := Integer_64 (Pop);
-      A : constant Integer_64 := Integer_64 (Pop);
-   begin
-      Push (Integer_32 (A * B / C));
-   end Scale;
-
    --------------
    -- ScaleMod --
    --------------
@@ -2248,7 +2236,6 @@ begin
    Register_Ada_Word ("ROLL", Roll'Access);
    Register_Ada_Word ("RSHIFT", Rshift'Access);
    Register_Ada_Word ("S>D", S_To_D'Access);
-   Register_Ada_Word ("*/", Scale'Access);
    Register_Ada_Word ("*/MOD", ScaleMod'Access);
    Register_Ada_Word ("SEE", See'Access);
    Register_Ada_Word (";", Semicolon'Access, Immediate => True);
