@@ -1596,7 +1596,7 @@ package body Aforth is
    ----------
 
    procedure Roll is
-      Index    : constant Integer    := Data_Stack.Top - Integer (Pop);
+      Index    : constant Integer    := Data_Stack.Top - Integer (Pop) - 1;
       Moved    : constant Integer_32 := Data_Stack.Data (Index);
    begin
       Data_Stack.Data (Index .. Data_Stack.Top - 1) :=
