@@ -89,7 +89,6 @@ package Aforth is
    procedure DivMod;
    procedure Does;
    procedure Dot;
-   procedure DotQuote;
    procedure Drop;
    procedure Dup;
    procedure Emit;

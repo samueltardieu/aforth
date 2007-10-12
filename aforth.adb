@@ -497,20 +497,6 @@ package body Aforth is
       Put (Pop, Base => Integer (Base.all), Width => 0);
    end Dot;
 
-   --------------
-   -- DotQuote --
-   --------------
-
-   procedure DotQuote is
-   begin
-      Squote;
-      if State.all = 0 then
-         Forth_Type;
-      else
-         Add_To_Compilation_Buffer (Forth_Type'Access);
-      end if;
-   end DotQuote;
-
    ----------
    -- Drop --
    ----------
@@ -2114,7 +2100,6 @@ begin
    Register_Ada_Word ("DUP", Dup'Access);
    Register_Ada_Word ("DEPTH", Depth'Access);
    Register_Ada_Word (".", Dot'Access);
-   Register_Ada_Word (".""", DotQuote'Access, Immediate => True);
    Register_Ada_Word ("EMIT", Emit'Access);
    Register_Ada_Word ("=", Equal'Access);
    Register_Ada_Word ("EXECUTE", Execute'Access);
