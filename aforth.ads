@@ -86,7 +86,6 @@ package Aforth is
    procedure Create;
    procedure Cstore;
    procedure Depth;
-   procedure Div;
    procedure DivMod;
    procedure Does;
    procedure Dot;
@@ -102,7 +101,6 @@ package Aforth is
    procedure Forth_Do;
    procedure Forth_Else;
    procedure Forth_If;
-   procedure Forth_Mod;
    procedure Forth_Or;
    procedure Forth_Then;
    procedure Forth_Type;

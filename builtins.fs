@@ -10,6 +10,8 @@
 : 0>= 0 >= ;
 : 0<> 0 <> ;
 : 2* 2 * ;
+: NIP SWAP DROP ;
+: / /MOD NIP ;
 : 2/ 2 / ;
 : 1+ 1 + ;
 : 1- 1 - ;
@@ -36,7 +38,6 @@
 : CHAR+ 1 + ;
 : CHARS ;
 : COUNT DUP CHAR+ SWAP C@ ;
-: NIP SWAP DROP ;
 : MAX 2DUP > IF DROP ELSE NIP THEN ;
 : MIN 2DUP > IF NIP ELSE DROP THEN ;
 : MOD /MOD DROP ;

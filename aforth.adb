@@ -434,16 +434,6 @@ package body Aforth is
       Push (Integer_32 (Data_Stack.Top));
    end Depth;
 
-   ---------
-   -- Div --
-   ---------
-
-   procedure Div is
-      A : constant Integer_32 := Pop;
-   begin
-      Push (Pop / A);
-   end Div;
-
    ------------
    -- DivMod --
    ------------
@@ -724,16 +714,6 @@ package body Aforth is
       Add_To_Compilation_Buffer (0);
       Add_To_Compilation_Buffer (Jump_If_False'Access);
    end Forth_If;
-
-   ---------------
-   -- Forth_Mod --
-   ---------------
-
-   procedure Forth_Mod is
-      A : constant Integer_32 := Pop;
-   begin
-      Push (Pop mod A);
-   end Forth_Mod;
 
    --------------
    -- Forth_Or --
@@ -2138,7 +2118,6 @@ begin
    Register_Ada_Word (",", Comma'Access);
    Register_Ada_Word ("CR", Cr'Access);
    Register_Ada_Word ("CREATE", Create'Access);
-   Register_Ada_Word ("/", Div'Access);
    Register_Ada_Word ("/MOD", DivMod'Access);
    Register_Ada_Word ("DOES>", Does'Access, Immediate => True);
    Register_Ada_Word ("DROP", Drop'Access);
@@ -2156,7 +2135,6 @@ begin
    Register_Ada_Word ("ELSE", Forth_Else'Access, Immediate => True);
    Register_Ada_Word ("[CHAR]", Ichar'Access, Immediate => True);
    Register_Ada_Word ("IF", Forth_If'Access, Immediate => True);
-   Register_Ada_Word ("MOD", Forth_Mod'Access);
    Register_Ada_Word ("OR", Forth_Or'Access);
    Register_Ada_Word ("THEN", Forth_Then'Access, Immediate => True);
    Register_Ada_Word ("TYPE", Forth_Type'Access);
