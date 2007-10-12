@@ -344,17 +344,6 @@ package body Aforth is
    end Cr;
 
    ------------
-   -- Create --
-   ------------
-
-   procedure Create is
-   begin
-      Colon;
-      Add_To_Compilation_Buffer (Here.all);
-      Semicolon;
-   end Create;
-
-   ------------
    -- Cstore --
    ------------
 
@@ -1986,7 +1975,6 @@ begin
    Register_Ada_Word ("]", Compile_Mode'Access);
    Register_Ada_Word (",", Comma'Access);
    Register_Ada_Word ("CR", Cr'Access);
-   Register_Ada_Word ("CREATE", Create'Access);
    Register_Ada_Word ("/MOD", DivMod'Access);
    Register_Ada_Word ("DOES>", Does'Access, Immediate => True);
    Register_Ada_Word ("DROP", Drop'Access);
