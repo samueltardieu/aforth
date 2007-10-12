@@ -259,15 +259,6 @@ package body Aforth is
       return Pop;
    end Cfetch;
 
-   ----------
-   -- Char --
-   ----------
-
-   procedure Char is
-   begin
-      Push (Character'Pos (Word (1)));
-   end Char;
-
    ------------------------
    -- Check_Compile_Only --
    ------------------------
@@ -1987,7 +1978,6 @@ begin
    Register_Ada_Word ("AGAIN", Again'Access, Immediate => True);
    Register_Ada_Word ("AHEAD", Ahead'Access, Immediate => True);
    Register_Ada_Word ("ALIGN", Align'Access);
-   Register_Ada_Word ("CHAR", Char'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
    Register_Ada_Word ("COMPILE,", Compile_Comma'Access);
    Register_Ada_Word ("C!", Cstore'Access);
