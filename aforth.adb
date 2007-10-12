@@ -2199,7 +2199,7 @@ begin
    Register_Ada_Word ("PARSE", Parse'Access);
    Register_Ada_Word ("PICK", Pick'Access);
    Register_Ada_Word ("+", Plus'Access);
-   Register_Ada_Word ("+LOOP", Plus_Loop'Access);
+   Register_Ada_Word ("+LOOP", Plus_Loop'Access, Immediate => True);
    Register_Ada_Word ("POSTPONE", Postpone'Access, Immediate => True);
    Register_Ada_Word ("QUIT", Quit'Access);
    Register_Ada_Word ("R@", R_At'Access);
