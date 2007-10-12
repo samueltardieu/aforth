@@ -764,16 +764,6 @@ package body Aforth is
    end Forth_Type;
 
    -----------------
-   -- Forth_Until --
-   -----------------
-
-   procedure Forth_Until is
-   begin
-      Literal;
-      Add_To_Compilation_Buffer (Jump_If_False'Access);
-   end Forth_Until;
-
-   -----------------
    -- Forth_While --
    -----------------
 
@@ -2170,7 +2160,6 @@ begin
    Register_Ada_Word ("OR", Forth_Or'Access);
    Register_Ada_Word ("THEN", Forth_Then'Access, Immediate => True);
    Register_Ada_Word ("TYPE", Forth_Type'Access);
-   Register_Ada_Word ("UNTIL", Forth_Until'Access, Immediate => True);
    Register_Ada_Word ("WHILE", Forth_While'Access, Immediate => True);
    Register_Ada_Word ("XOR", Forth_Xor'Access);
    Register_Ada_Word ("R>", From_R'Access);
