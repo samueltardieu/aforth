@@ -779,10 +779,12 @@ package body Aforth is
 
    procedure Forth_While is
    begin
+      Check_Control_Structure (Backward_Reference);
       Push (Compilation_Index);
       Swap;
       Add_To_Compilation_Buffer (0);
       Add_To_Compilation_Buffer (Jump_If_False'Access);
+      Push (Backward_Reference);
    end Forth_While;
 
    ---------------
