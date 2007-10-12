@@ -19,6 +19,7 @@ package body Aforth is
             Ada_Proc   : Ada_Word_Access;
          when Forth_Word =>
             Forth_Proc : Integer_32;
+            Inline     : Boolean;
          when Number =>
             Value      : Integer_32;
       end case;
@@ -96,6 +97,7 @@ package body Aforth is
 
    Forth_Exit : constant Action_Type := (Kind       => Forth_Word,
                                          Immediate  => True,
+                                         Inline     => False,
                                          Forth_Proc => -1);
 
    Forward_Reference  : constant := -100;
@@ -147,6 +149,7 @@ package body Aforth is
    procedure Check_Control_Structure (Reference : in Integer_32);
 
    procedure Set_Last_Immediate (Dict : in Dictionary_Access);
+   procedure Set_Last_Inline (Dict : in Dictionary_Access);
 
    -------------------------------
    -- Add_To_Compilation_Buffer --
@@ -156,24 +159,21 @@ package body Aforth is
    begin
       Check_Compile_Only;
 
-      --  Properly inline Ada words called through a Forth wrapper
-      --  as they may need to preserve the return stack (>R and friends).
+      --  Call or inline words
 
-      if Action.Kind = Forth_Word and then Action /= Forth_Exit then
+      if Action.Kind = Forth_Word and then Action.Inline then
          declare
-            First_Action : constant Action_Type :=
-              Compilation_Buffer (Action.Forth_Proc);
+            Index : Integer_32 := Action.Forth_Proc;
          begin
-            if First_Action.Kind = Ada_Word and then
-              Compilation_Buffer (Action.Forth_Proc + 1) = Forth_Exit
-            then
-               Add_To_Compilation_Buffer (First_Action);
-               return;
-            end if;
+            while Compilation_Buffer (Index) /= Forth_Exit loop
+               Add_To_Compilation_Buffer (Compilation_Buffer (Index));
+               Index := Index + 1;
+            end loop;
          end;
+      else
+         Compilation_Buffer (Compilation_Index) := Action;
+         Compilation_Index := Compilation_Index + 1;
       end if;
-      Compilation_Buffer (Compilation_Index) := Action;
-      Compilation_Index := Compilation_Index + 1;
    end Add_To_Compilation_Buffer;
 
    -------------------------------
@@ -470,6 +470,7 @@ package body Aforth is
       Compilation_Buffer (Compilation_Index - 1) :=
         Action_Type'(Kind       => Forth_Word,
                      Immediate  => True,
+                     Inline     => False,
                      Forth_Proc => Pop);
       Compilation_Index := Compilation_Index + 1;
    end DoDoes;
@@ -1541,6 +1542,7 @@ package body Aforth is
       if Immediate then
          Set_Immediate;
       end if;
+      Set_Inline;
    end Register_Ada_Word;
 
    -----------------------
@@ -1772,6 +1774,15 @@ package body Aforth is
       Set_Last_Immediate (Dict);
    end Set_Immediate;
 
+   ----------------
+   -- Set_Inline --
+   ----------------
+
+   procedure Set_Inline is
+   begin
+      Set_Last_Inline (Dict);
+   end Set_Inline;
+
    ------------------------
    -- Set_Last_Immediate --
    ------------------------
@@ -1780,6 +1791,15 @@ package body Aforth is
    begin
       Dict (Dict'Last) .Action.Immediate := True;
    end Set_Last_Immediate;
+
+   ---------------------
+   -- Set_Last_Inline --
+   ---------------------
+
+   procedure Set_Last_Inline (Dict : in Dictionary_Access) is
+   begin
+      Dict (Dict'Last) .Action.Inline := True;
+   end Set_Last_Inline;
 
    -----------------
    -- Skip_Blanks --
@@ -2252,6 +2272,7 @@ begin
    Register_Ada_Word ("SEE", See'Access);
    Register_Ada_Word (";", Semicolon'Access, Immediate => True);
    Register_Ada_Word ("IMMEDIATE", Set_Immediate'Access);
+   Register_Ada_Word ("INLINE", Set_Inline'Access);
    Register_Ada_Word ("SKIP-BLANKS", Skip_Blanks'Access);
    Register_Ada_Word ("SM/REM", Sm_Slash_Rem'Access);
    Register_Ada_Word ("<", Smaller'Access);

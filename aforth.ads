@@ -148,6 +148,7 @@ package Aforth is
    procedure See;
    procedure Semicolon;
    procedure Set_Immediate;
+   procedure Set_Inline;
    procedure Skip_Blanks;
    procedure Sm_Slash_Rem;
    procedure Smaller;
