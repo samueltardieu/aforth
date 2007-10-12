@@ -249,17 +249,6 @@ package body Aforth is
    end Bl;
 
    ------------
-   -- Bounds --
-   ------------
-
-   procedure Bounds is
-   begin
-      Over;
-      Plus;
-      Swap;
-   end Bounds;
-
-   ------------
    -- Cfetch --
    ------------
 
@@ -2060,7 +2049,6 @@ begin
    Register_Ada_Word ("AHEAD", Ahead'Access, Immediate => True);
    Register_Ada_Word ("ALIGN", Align'Access);
    Register_Ada_Word ("BL", Bl'Access);
-   Register_Ada_Word ("BOUNDS", Bounds'Access);
    Register_Ada_Word ("CHAR", Char'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
    Register_Ada_Word ("COMPILE,", Compile_Comma'Access);
