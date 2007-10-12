@@ -668,15 +668,6 @@ package body Aforth is
       Patch_Jump (To_Patch => Pop, Target => Compilation_Index);
    end Forth_Then;
 
-   ----------------
-   -- Forth_Type --
-   ----------------
-
-   procedure Forth_Type is
-   begin
-      Put (To_String);
-   end Forth_Type;
-
    -----------------
    -- Forth_While --
    -----------------
@@ -2023,7 +2014,6 @@ begin
    Register_Ada_Word ("IF", Forth_If'Access, Immediate => True);
    Register_Ada_Word ("OR", Forth_Or'Access);
    Register_Ada_Word ("THEN", Forth_Then'Access, Immediate => True);
-   Register_Ada_Word ("TYPE", Forth_Type'Access);
    Register_Ada_Word ("WHILE", Forth_While'Access, Immediate => True);
    Register_Ada_Word ("XOR", Forth_Xor'Access);
    Register_Ada_Word ("R>", From_R'Access);
