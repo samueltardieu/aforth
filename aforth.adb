@@ -1747,28 +1747,6 @@ package body Aforth is
       Emit;
    end Space;
 
-   ------------
-   -- Squote --
-   ------------
-
-   procedure Squote is
-      Length : Integer_32;
-      Addr   : Integer_32;
-   begin
-      Check_Compile_Only;
-      Push (Character'Pos ('"'));
-      Parse;
-      Length := Pop;
-      Addr := Pop;
-      Add_To_Compilation_Buffer (Here.all);
-      Add_To_Compilation_Buffer (Length);
-      for I in 1 .. Length loop
-         Push (Integer_32 (Memory (Addr)));
-         Ccomma;
-         Addr := Addr + 1;
-      end loop;
-   end Squote;
-
    ----------------------
    -- Start_Definition --
    ----------------------
@@ -2152,7 +2130,6 @@ begin
    Register_Ada_Word ("<", Smaller'Access);
    Register_Ada_Word ("<=", Smallerequal'Access);
    Register_Ada_Word ("SPACE", Space'Access);
-   Register_Ada_Word ("S""", Squote'Access, Immediate => True);
    Register_Ada_Word ("SWAP", Swap'Access);
    Register_Ada_Word ("!", Store'Access);
    Register_Ada_Word ("'", Tick'Access);

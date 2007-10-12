@@ -143,7 +143,6 @@ package Aforth is
    procedure Smaller;
    procedure Smallerequal;
    procedure Space;
-   procedure Squote;
    procedure Store;
    procedure Swap;
    procedure Tick;
