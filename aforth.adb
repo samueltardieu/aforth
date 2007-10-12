@@ -521,23 +521,6 @@ package body Aforth is
    end DotQuote;
 
    ----------
-   -- DotS --
-   ----------
-
-   procedure DotS is
-   begin
-      Put ('<');
-      Depth;
-      Dot;
-      Put ('>');
-      for I in 1 .. Data_Stack.Top loop
-         Space;
-         Push (Data_Stack.Data (I));
-         Dot;
-      end loop;
-   end DotS;
-
-   ----------
    -- Drop --
    ----------
 
@@ -2217,7 +2200,6 @@ begin
    Register_Ada_Word ("DEPTH", Depth'Access);
    Register_Ada_Word (".", Dot'Access);
    Register_Ada_Word (".""", DotQuote'Access, Immediate => True);
-   Register_Ada_Word (".S", DotS'Access);
    Register_Ada_Word ("EMIT", Emit'Access);
    Register_Ada_Word ("=", Equal'Access);
    Register_Ada_Word ("EXECUTE", Execute'Access);

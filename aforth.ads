@@ -91,7 +91,6 @@ package Aforth is
    procedure Does;
    procedure Dot;
    procedure DotQuote;
-   procedure DotS;
    procedure Drop;
    procedure Dup;
    procedure Emit;
