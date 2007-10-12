@@ -256,7 +256,7 @@ package body Aforth is
    begin
       Over;
       Plus;
-      Swap:
+      Swap;
    end Bounds;
 
    ------------
