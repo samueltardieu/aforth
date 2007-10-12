@@ -662,8 +662,7 @@ package body Aforth is
             return Dict (I) .Action;
          end if;
       end loop;
-      Raise_Exception (Not_Found'Identity,
-                       Name & " not found");
+      Raise_Exception (Not_Found'Identity, Name);
    end Find;
 
    ---------------
@@ -930,12 +929,12 @@ package body Aforth is
                   A.Immediate := True;
                   Execute_Action (A);
                exception
-                  when Not_Found =>
+                  when NF : Not_Found =>
                      begin
                         I := Integer_32'Value (W);
                      exception
                         when Constraint_Error =>
-                           Raise_Exception (Not_Found'Identity, W);
+                           Reraise_Occurrence (NF);
                      end;
                      Push (I);
                end;
@@ -948,12 +947,12 @@ package body Aforth is
                      Add_To_Compilation_Buffer (A);
                   end if;
                exception
-                  when Not_Found =>
+                  when NF : Not_Found =>
                      begin
                         I := Integer_32'Value (W);
                      exception
                         when Constraint_Error =>
-                           Raise_Exception (Not_Found'Identity, W);
+                           Reraise_Occurrence (NF);
                      end;
                      Add_To_Compilation_Buffer (I);
                end;
