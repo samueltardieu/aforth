@@ -1784,17 +1784,6 @@ package body Aforth is
       Push (A);
    end Two_Dup;
 
-   ----------------
-   -- Two_From_R --
-   ----------------
-
-   procedure Two_From_R is
-   begin
-      From_R;
-      From_R;
-      Swap;
-   end Two_From_R;
-
    --------------
    -- Two_R_At --
    --------------
@@ -2037,7 +2026,6 @@ begin
    Register_Ada_Word (">BODY", To_Body'Access);
    Register_Ada_Word (">R", To_R'Access);
    Register_Ada_Word ("2DUP", Two_Dup'Access);
-   Register_Ada_Word ("2R>", Two_From_R'Access);
    Register_Ada_Word ("2R@", Two_R_At'Access);
    Register_Ada_Word ("2SWAP", Two_Swap'Access);
    Register_Ada_Word ("2>R", Two_To_R'Access);

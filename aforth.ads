@@ -142,7 +142,6 @@ package Aforth is
    procedure To_Body;
    procedure To_R;
    procedure Two_Dup;
-   procedure Two_From_R;
    procedure Two_R_At;
    procedure Two_Swap;
    procedure Two_To_R;
