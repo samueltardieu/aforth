@@ -318,29 +318,6 @@ package body Aforth is
       State.all := 1;
    end Compile_Mode;
 
-   ------------
-   -- Cquote --
-   ------------
-
-   procedure Cquote is
-      Length : Integer_32;
-      Addr   : Integer_32;
-   begin
-      Check_Compile_Only;
-      Push (Character'Pos ('"'));
-      Parse;
-      Length := Pop;
-      Addr := Pop;
-      Add_To_Compilation_Buffer (Here.all);
-      Push (Length);
-      Ccomma;
-      for I in 1 .. Length loop
-         Push (Integer_32 (Memory (Addr)));
-         Ccomma;
-         Addr := Addr + 1;
-      end loop;
-   end Cquote;
-
    -----------
    -- Colon --
    -----------
@@ -359,16 +336,6 @@ package body Aforth is
       Push (Compilation_Index);
       Start_Definition ("");
    end Colon_Noname;
-
-   ------------
-   -- Ccomma --
-   ------------
-
-   procedure Ccomma is
-   begin
-      Memory (Here.all) := Unsigned_8 (Pop);
-      Here.all := Here.all + 1;
-   end Ccomma;
 
    -----------
    -- Comma --
@@ -1726,16 +1693,6 @@ package body Aforth is
       Push (Pop <= B);
    end Smallerequal;
 
-   -----------
-   -- Space --
-   -----------
-
-   procedure Space is
-   begin
-      Bl;
-      Emit;
-   end Space;
-
    ----------------------
    -- Start_Definition --
    ----------------------
@@ -2052,12 +2009,10 @@ begin
    Register_Ada_Word ("CHAR", Char'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
    Register_Ada_Word ("COMPILE,", Compile_Comma'Access);
-   Register_Ada_Word ("C""", Cquote'Access, Immediate => True);
    Register_Ada_Word ("C!", Cstore'Access);
    Register_Ada_Word (":", Colon'Access);
    Register_Ada_Word (":NONAME", Colon_Noname'Access);
    Register_Ada_Word ("]", Compile_Mode'Access);
-   Register_Ada_Word ("C,", Ccomma'Access);
    Register_Ada_Word (",", Comma'Access);
    Register_Ada_Word ("CR", Cr'Access);
    Register_Ada_Word ("CREATE", Create'Access);
@@ -2117,7 +2072,6 @@ begin
    Register_Ada_Word ("SM/REM", Sm_Slash_Rem'Access);
    Register_Ada_Word ("<", Smaller'Access);
    Register_Ada_Word ("<=", Smallerequal'Access);
-   Register_Ada_Word ("SPACE", Space'Access);
    Register_Ada_Word ("SWAP", Swap'Access);
    Register_Ada_Word ("!", Store'Access);
    Register_Ada_Word ("'", Tick'Access);

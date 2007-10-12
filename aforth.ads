@@ -73,14 +73,12 @@ package Aforth is
    procedure Align;
    procedure Bl;
    procedure Char;
-   procedure Ccomma;
    procedure Cfetch;
    procedure Colon;
    procedure Colon_Noname;
    procedure Comma;
    procedure Compile_Comma;
    procedure Compile_Mode;
-   procedure Cquote;
    procedure Cr;
    procedure Create;
    procedure Cstore;
@@ -141,7 +139,6 @@ package Aforth is
    procedure Sm_Slash_Rem;
    procedure Smaller;
    procedure Smallerequal;
-   procedure Space;
    procedure Store;
    procedure Swap;
    procedure Tick;
