@@ -109,7 +109,6 @@ package Aforth is
    procedure From_R;
    procedure Greater;
    procedure Greaterequal;
-   procedure Ichar;
    procedure Include;
    procedure Interpret;
    procedure Interpret_Mode;

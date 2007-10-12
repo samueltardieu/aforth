@@ -795,16 +795,6 @@ package body Aforth is
       Push (Pop >= B);
    end Greaterequal;
 
-   -----------
-   -- Ichar --
-   -----------
-
-   procedure Ichar is
-   begin
-      Char;
-      Literal;
-   end Ichar;
-
    -------------
    -- Include --
    -------------
@@ -2133,7 +2123,6 @@ begin
    Register_Ada_Word ("BEGIN", Forth_Begin'Access, Immediate => True);
    Register_Ada_Word ("DO", Forth_Do'Access, Immediate => True);
    Register_Ada_Word ("ELSE", Forth_Else'Access, Immediate => True);
-   Register_Ada_Word ("[CHAR]", Ichar'Access, Immediate => True);
    Register_Ada_Word ("IF", Forth_If'Access, Immediate => True);
    Register_Ada_Word ("OR", Forth_Or'Access);
    Register_Ada_Word ("THEN", Forth_Then'Access, Immediate => True);
