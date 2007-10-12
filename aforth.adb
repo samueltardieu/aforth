@@ -725,16 +725,6 @@ package body Aforth is
       Add_To_Compilation_Buffer (Jump_If_False'Access);
    end Forth_If;
 
-   ----------------
-   -- Forth_Loop --
-   ----------------
-
-   procedure Forth_Loop is
-   begin
-      Add_To_Compilation_Buffer (1);
-      Plus_Loop;
-   end Forth_Loop;
-
    ---------------
    -- Forth_Mod --
    ---------------
@@ -2174,7 +2164,6 @@ begin
    Register_Ada_Word ("ELSE", Forth_Else'Access, Immediate => True);
    Register_Ada_Word ("[CHAR]", Ichar'Access, Immediate => True);
    Register_Ada_Word ("IF", Forth_If'Access, Immediate => True);
-   Register_Ada_Word ("LOOP", Forth_Loop'Access, Immediate => True);
    Register_Ada_Word ("MOD", Forth_Mod'Access);
    Register_Ada_Word ("OR", Forth_Or'Access);
    Register_Ada_Word ("THEN", Forth_Then'Access, Immediate => True);

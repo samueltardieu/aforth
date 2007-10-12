@@ -102,7 +102,6 @@ package Aforth is
    procedure Forth_Do;
    procedure Forth_Else;
    procedure Forth_If;
-   procedure Forth_Loop;
    procedure Forth_Mod;
    procedure Forth_Or;
    procedure Forth_Then;
