@@ -2241,7 +2241,6 @@ begin
    Register_Ada_Word ("+LOOP", Plus_Loop'Access);
    Register_Ada_Word ("POSTPONE", Postpone'Access, Immediate => True);
    Register_Ada_Word ("QUIT", Quit'Access);
-   Register_Ada_Word ("I", R_At'Access);
    Register_Ada_Word ("R@", R_At'Access);
    Register_Ada_Word ("RECURSE", Recurse'Access, Immediate => True);
    Register_Ada_Word ("REFILL", Refill'Access);
