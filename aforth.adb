@@ -1774,7 +1774,7 @@ package body Aforth is
       Length := Pop;
       Addr := Pop;
       Add_To_Compilation_Buffer (Here.all);
-      Add_To_Compilation_Buffer (Addr);
+      Add_To_Compilation_Buffer (Length);
       for I in 1 .. Length loop
          Push (Integer_32 (Memory (Addr)));
          Ccomma;
