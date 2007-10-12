@@ -1144,24 +1144,6 @@ package body Aforth is
       Push_64 (Integer_64 (Pop) * Integer_64 (Pop));
    end Mstar;
 
-   --------------
-   -- Oneminus --
-   --------------
-
-   procedure Oneminus is
-   begin
-      Push (Pop - 1);
-   end Oneminus;
-
-   -------------
-   -- Oneplus --
-   -------------
-
-   procedure Oneplus is
-   begin
-      Push (Pop + 1);
-   end Oneplus;
-
    ----------
    -- Over --
    ----------
@@ -2210,8 +2192,6 @@ begin
    Register_Ada_Word ("-", Minus'Access);
    Register_Ada_Word ("-!", Minusstore'Access);
    Register_Ada_Word ("M*", Mstar'Access);
-   Register_Ada_Word ("1-", Oneminus'Access);
-   Register_Ada_Word ("1+", Oneplus'Access);
    Register_Ada_Word ("OVER", Over'Access);
    Register_Ada_Word ("PARSE", Parse'Access);
    Register_Ada_Word ("PICK", Pick'Access);
