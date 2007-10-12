@@ -71,7 +71,6 @@ package Aforth is
    procedure Again;
    procedure Ahead;
    procedure Align;
-   procedure Bl;
    procedure Char;
    procedure Cfetch;
    procedure Colon;

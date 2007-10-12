@@ -239,15 +239,6 @@ package body Aforth is
       end if;
    end Align;
 
-   --------
-   -- Bl --
-   --------
-
-   procedure Bl is
-   begin
-      Push (32);
-   end Bl;
-
    ------------
    -- Cfetch --
    ------------
@@ -2005,7 +1996,6 @@ begin
    Register_Ada_Word ("AGAIN", Again'Access, Immediate => True);
    Register_Ada_Word ("AHEAD", Ahead'Access, Immediate => True);
    Register_Ada_Word ("ALIGN", Align'Access);
-   Register_Ada_Word ("BL", Bl'Access);
    Register_Ada_Word ("CHAR", Char'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
    Register_Ada_Word ("COMPILE,", Compile_Comma'Access);
