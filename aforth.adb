@@ -100,9 +100,10 @@ package body Aforth is
                                          Inline     => False,
                                          Forth_Proc => -1);
 
-   Forward_Reference  : constant := -100;
-   Backward_Reference : constant := -101;
-   Do_Loop_Reference  : constant := -102;
+   Forward_Reference  : constant   := -100;
+   Backward_Reference : constant   := -101;
+   Do_Loop_Reference  : constant   := -102;
+   Definition_Reference : constant := -103;
 
    procedure Remember_Variable
      (Name : in String;
@@ -1696,6 +1697,7 @@ package body Aforth is
 
    procedure Semicolon is
    begin
+      Check_Control_Structure (Definition_Reference);
       Add_To_Compilation_Buffer (Forth_Exit);
 
       --  Current_Name can be null during definition or completion of
@@ -1840,6 +1842,7 @@ package body Aforth is
       Current_Action.Immediate  := False;
       Current_Action.Forth_Proc := Compilation_Index;
       Compile_Mode;
+      Push (Definition_Reference);
    end Start_Definition;
 
    -----------
