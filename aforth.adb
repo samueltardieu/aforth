@@ -971,17 +971,6 @@ package body Aforth is
       Push (Pop - A);
    end Minus;
 
-   ----------------
-   -- Minusstore --
-   ----------------
-
-   procedure Minusstore is
-      Addr : constant Integer_32 := Pop;
-      Cst  : constant Integer_32 := Pop;
-   begin
-      Store (Addr, Fetch (Addr) - Cst);
-   end Minusstore;
-
    -----------
    -- Mstar --
    -----------
@@ -1959,7 +1948,6 @@ begin
    Register_Ada_Word ("LSHIFT", Lshift'Access);
    Register_Ada_Word ("KEY", Key'Access);
    Register_Ada_Word ("-", Minus'Access);
-   Register_Ada_Word ("-!", Minusstore'Access);
    Register_Ada_Word ("M*", Mstar'Access);
    Register_Ada_Word ("OVER", Over'Access);
    Register_Ada_Word ("PARSE", Parse'Access);
