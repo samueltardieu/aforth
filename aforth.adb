@@ -606,17 +606,6 @@ package body Aforth is
       Push (Do_Loop_Reference);
    end Forth_Do;
 
-   ----------------
-   -- Forth_Else --
-   ----------------
-
-   procedure Forth_Else is
-   begin
-      Ahead;
-      Two_Swap;
-      Forth_Then;
-   end Forth_Else;
-
    --------------
    -- Forth_If --
    --------------
@@ -1427,8 +1416,9 @@ package body Aforth is
    ----------
 
    procedure Roll is
-      Index    : constant Integer    := Data_Stack.Top - Integer (Pop) - 1;
-      Moved    : constant Integer_32 := Data_Stack.Data (Index);
+      Offset : constant Integer    := Integer (Pop);
+      Index  : constant Integer    := Data_Stack.Top - Offset;
+      Moved  : constant Integer_32 := Data_Stack.Data (Index);
    begin
       Data_Stack.Data (Index .. Data_Stack.Top - 1) :=
         Data_Stack.Data (Index + 1 .. Data_Stack.Top);
@@ -1796,28 +1786,6 @@ package body Aforth is
    end Two_R_At;
 
    --------------
-   -- Two_Swap --
-   --------------
-
-   procedure Two_Swap is
-
-      procedure Swap (X, Y : in out Integer_32);
-
-      procedure Swap (X, Y : in out Integer_32) is
-         Temp : constant Integer_32 := X;
-      begin
-         X := Y;
-         Y := Temp;
-      end Swap;
-
-   begin
-      Swap (Data_Stack.Data (Data_Stack.Top),
-            Data_Stack.Data (Data_Stack.Top - 2));
-      Swap (Data_Stack.Data (Data_Stack.Top - 1),
-            Data_Stack.Data (Data_Stack.Top - 3));
-   end Two_Swap;
-
-   --------------
    -- Two_To_R --
    --------------
 
@@ -1977,7 +1945,6 @@ begin
    Register_Ada_Word ("AND", Forth_And'Access);
    Register_Ada_Word ("BEGIN", Forth_Begin'Access, Immediate => True);
    Register_Ada_Word ("DO", Forth_Do'Access, Immediate => True);
-   Register_Ada_Word ("ELSE", Forth_Else'Access, Immediate => True);
    Register_Ada_Word ("IF", Forth_If'Access, Immediate => True);
    Register_Ada_Word ("OR", Forth_Or'Access);
    Register_Ada_Word ("THEN", Forth_Then'Access, Immediate => True);
@@ -2027,7 +1994,6 @@ begin
    Register_Ada_Word (">R", To_R'Access);
    Register_Ada_Word ("2DUP", Two_Dup'Access);
    Register_Ada_Word ("2R@", Two_R_At'Access);
-   Register_Ada_Word ("2SWAP", Two_Swap'Access);
    Register_Ada_Word ("2>R", Two_To_R'Access);
    Register_Ada_Word ("U<", U_Smaller'Access);
    Register_Ada_Word ("UM/MOD", Um_Slash_Mod'Access);

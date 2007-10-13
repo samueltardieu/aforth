@@ -92,7 +92,6 @@ package Aforth is
    procedure Forth_And;
    procedure Forth_Begin;
    procedure Forth_Do;
-   procedure Forth_Else;
    procedure Forth_If;
    procedure Forth_Or;
    procedure Forth_Then;
@@ -143,7 +142,6 @@ package Aforth is
    procedure To_R;
    procedure Two_Dup;
    procedure Two_R_At;
-   procedure Two_Swap;
    procedure Two_To_R;
    procedure U_Smaller;
    procedure Um_Slash_Mod;
