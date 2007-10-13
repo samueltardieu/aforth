@@ -84,7 +84,6 @@ package Aforth is
    procedure Does;
    procedure Dot;
    procedure Drop;
-   procedure Dup;
    procedure Emit;
    procedure Equal;
    procedure Execute;

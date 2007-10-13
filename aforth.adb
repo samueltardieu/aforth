@@ -436,17 +436,6 @@ package body Aforth is
       null;
    end Drop;
 
-   ---------
-   -- Dup --
-   ---------
-
-   procedure Dup is
-      Value : constant Integer_32 := Pop;
-   begin
-      Push (Value);
-      Push (Value);
-   end Dup;
-
    ----------
    -- Emit --
    ----------
@@ -1912,7 +1901,6 @@ begin
    Register_Ada_Word ("/MOD", DivMod'Access);
    Register_Ada_Word ("DOES>", Does'Access, Immediate => True);
    Register_Ada_Word ("DROP", Drop'Access);
-   Register_Ada_Word ("DUP", Dup'Access);
    Register_Ada_Word ("DEPTH", Depth'Access);
    Register_Ada_Word (".", Dot'Access);
    Register_Ada_Word ("EMIT", Emit'Access);
