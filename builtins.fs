@@ -15,6 +15,8 @@
 : / /MOD NIP ;
 : 2/ 2 / ;
 : 1+ 1 + ;
+: NEGATE -1 XOR 1+ ;
+: - NEGATE + ;
 : 1- 1 - ;
 : 2DROP DROP DROP ;
 : OVER 1 PICK ;
@@ -35,7 +37,6 @@
 : 2OVER 3 PICK 3 PICK ;
 : ROT 2 ROLL ;
 : ?DUP DUP IF DUP THEN ;
-: NEGATE 0 SWAP - ;
 : ABS DUP 0< IF NEGATE THEN ;
 : ALIGNED CELL 1- + CELL / CELL * ;
 : ALLOT HERE +! ;

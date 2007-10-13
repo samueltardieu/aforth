@@ -951,16 +951,6 @@ package body Aforth is
    end Make_Variable;
 
    -----------
-   -- Minus --
-   -----------
-
-   procedure Minus is
-      A : constant Integer_32 := Pop;
-   begin
-      Push (Pop - A);
-   end Minus;
-
-   -----------
    -- Mstar --
    -----------
 
@@ -1925,7 +1915,6 @@ begin
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
    Register_Ada_Word ("LSHIFT", Lshift'Access);
    Register_Ada_Word ("KEY", Key'Access);
-   Register_Ada_Word ("-", Minus'Access);
    Register_Ada_Word ("M*", Mstar'Access);
    Register_Ada_Word ("PARSE", Parse'Access);
    Register_Ada_Word ("PICK", Pick'Access);
