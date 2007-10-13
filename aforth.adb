@@ -980,16 +980,6 @@ package body Aforth is
       Push_64 (Integer_64 (Pop) * Integer_64 (Pop));
    end Mstar;
 
-   ----------
-   -- Over --
-   ----------
-
-   procedure Over is
-   begin
-      Push (1);
-      Pick;
-   end Over;
-
    -----------
    -- Parse --
    -----------
@@ -1949,7 +1939,6 @@ begin
    Register_Ada_Word ("KEY", Key'Access);
    Register_Ada_Word ("-", Minus'Access);
    Register_Ada_Word ("M*", Mstar'Access);
-   Register_Ada_Word ("OVER", Over'Access);
    Register_Ada_Word ("PARSE", Parse'Access);
    Register_Ada_Word ("PICK", Pick'Access);
    Register_Ada_Word ("+", Plus'Access);

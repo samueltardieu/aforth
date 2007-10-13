@@ -110,7 +110,6 @@ package Aforth is
    procedure Lshift;
    procedure Minus;
    procedure Mstar;
-   procedure Over;
    procedure Parse;
    procedure Pick;
    procedure Plus;
