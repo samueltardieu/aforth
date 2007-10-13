@@ -1265,10 +1265,8 @@ package body Aforth is
    -------------
 
    procedure Recurse is
-      A : Action_Type := Current_Action;
    begin
-      A.Immediate := True;
-      Add_To_Compilation_Buffer (A);
+      Add_To_Compilation_Buffer (Current_Action);
    end Recurse;
 
    ------------
