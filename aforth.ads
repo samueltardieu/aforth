@@ -85,7 +85,6 @@ package Aforth is
    procedure Dot;
    procedure Drop;
    procedure Emit;
-   procedure Equal;
    procedure Execute;
    procedure Fetch;
    procedure Forth_And;
@@ -97,7 +96,6 @@ package Aforth is
    procedure Forth_While;
    procedure Forth_Xor;
    procedure From_R;
-   procedure Greater;
    procedure Greaterequal;
    procedure Include;
    procedure Interpret;
@@ -128,8 +126,6 @@ package Aforth is
    procedure Set_Inline;
    procedure Skip_Blanks;
    procedure Sm_Slash_Rem;
-   procedure Smaller;
-   procedure Smallerequal;
    procedure Store;
    procedure Swap;
    procedure Tick;

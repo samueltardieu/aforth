@@ -445,15 +445,6 @@ package body Aforth is
       Put (Character'Val (Pop));
    end Emit;
 
-   -----------
-   -- Equal --
-   -----------
-
-   procedure Equal is
-   begin
-      Push (Pop = Pop);
-   end Equal;
-
    -------------
    -- Execute --
    -------------
@@ -657,16 +648,6 @@ package body Aforth is
    begin
       Push (Pop (Return_Stack));
    end From_R;
-
-   -------------
-   -- Greater --
-   -------------
-
-   procedure Greater is
-      B : constant Integer_32 := Pop;
-   begin
-      Push (Pop > B);
-   end Greater;
 
    ------------------
    -- Greaterequal --
@@ -1581,26 +1562,6 @@ package body Aforth is
       Push (Integer_32 (D / N));
    end Sm_Slash_Rem;
 
-   -------------
-   -- Smaller --
-   -------------
-
-   procedure Smaller is
-      B : constant Integer_32 := Pop;
-   begin
-      Push (Pop < B);
-   end Smaller;
-
-   ------------------
-   -- Smallerequal --
-   ------------------
-
-   procedure Smallerequal is
-      B : constant Integer_32 := Pop;
-   begin
-      Push (Pop <= B);
-   end Smallerequal;
-
    ----------------------
    -- Start_Definition --
    ----------------------
@@ -1894,7 +1855,6 @@ begin
    Register_Ada_Word ("DEPTH", Depth'Access);
    Register_Ada_Word (".", Dot'Access);
    Register_Ada_Word ("EMIT", Emit'Access);
-   Register_Ada_Word ("=", Equal'Access);
    Register_Ada_Word ("EXECUTE", Execute'Access);
    Register_Ada_Word ("@", Fetch'Access);
    Register_Ada_Word ("AND", Forth_And'Access);
@@ -1906,7 +1866,6 @@ begin
    Register_Ada_Word ("WHILE", Forth_While'Access, Immediate => True);
    Register_Ada_Word ("XOR", Forth_Xor'Access);
    Register_Ada_Word ("R>", From_R'Access);
-   Register_Ada_Word (">", Greater'Access);
    Register_Ada_Word (">=", Greaterequal'Access);
    Register_Ada_Word ("J", J'Access);
    Register_Ada_Word ("INCLUDE", Include'Access);
@@ -1936,8 +1895,6 @@ begin
    Register_Ada_Word ("INLINE", Set_Inline'Access);
    Register_Ada_Word ("SKIP-BLANKS", Skip_Blanks'Access);
    Register_Ada_Word ("SM/REM", Sm_Slash_Rem'Access);
-   Register_Ada_Word ("<", Smaller'Access);
-   Register_Ada_Word ("<=", Smallerequal'Access);
    Register_Ada_Word ("SWAP", Swap'Access);
    Register_Ada_Word ("!", Store'Access);
    Register_Ada_Word ("'", Tick'Access);
