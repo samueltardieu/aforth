@@ -1180,6 +1180,8 @@ package body Aforth is
                Put_Line ("*** Stack overflow");
             when Stack_Underflow =>
                Put_Line ("*** Stack underflow");
+            when Compile_Only =>
+               Put_Line ("*** Compile only");
             when Already_Handled =>
                null;
             when E : others =>
