@@ -1,0 +1,15 @@
+with "areadline";
+
+project Aforth is
+
+  for Main use ("test_aforth");
+
+  package Builder is
+    for Default_Switches ("Ada") use ("-g");
+  end Builder;
+
+  package Compiler is
+    for Default_Switches ("Ada") use ("-g", "-O2", "-gnatg");
+  end Compiler;
+
+end Aforth;
