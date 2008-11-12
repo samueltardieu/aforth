@@ -1,5 +1,5 @@
 GNATMAKE ?= gnatmake
-GNATCFLAGS = -I../areadline -g -O2 -gnatwa -gnatwe -gnaty -gnata
+GNATCFLAGS = -aP../areadline
 PYTHON ?= python
 
 PROGRAMS = test_aforth
@@ -16,7 +16,7 @@ aforth-builtins.ads aforth-builtins.adb: builtins.fs
 	$(PYTHON) embed.py $< Aforth.Builtins
 
 test_aforth: never aforth-builtins.ads aforth-builtins.adb
-	$(GNATMAKE) $(GNATCFLAGS) test_aforth
+	$(GNATMAKE) $(GNATCFLAGS) -Paforth
 
 clean:: never
 	$(RM) *.o *.ali *~ b~*.ad? $(PROGRAMS) builtins.ads builtins.adb
