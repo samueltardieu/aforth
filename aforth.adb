@@ -25,8 +25,8 @@ package body Aforth is
       end case;
    end record;
 
-   procedure Register (Name   : in String;
-                       Action : in Action_Type);
+   procedure Register (Name   : String;
+                       Action : Action_Type);
 
    Not_Found : exception;
 
@@ -36,7 +36,7 @@ package body Aforth is
    Compilation_Buffer : array (Integer_32'(1) .. 16384) of Action_Type;
    Compilation_Index  : Integer_32 := 1;
 
-   procedure Add_To_Compilation_Buffer (Action : in Action_Type);
+   procedure Add_To_Compilation_Buffer (Action : Action_Type);
 
    package Integer_32_IO is new Ada.Text_IO.Integer_IO (Integer_32);
    use Integer_32_IO;
@@ -80,7 +80,7 @@ package body Aforth is
    procedure Free is
       new Ada.Unchecked_Deallocation (String, String_Access);
 
-   procedure Push (S : access Stack_Type; X : in Integer_32);
+   procedure Push (S : access Stack_Type; X : Integer_32);
    --  May raise stack overflow
 
    function Pop (S : access Stack_Type) return Integer_32;
@@ -106,11 +106,11 @@ package body Aforth is
    Definition_Reference : constant := -103;
 
    procedure Remember_Variable
-     (Name : in String;
+     (Name : String;
       Var  : out Integer_32_Access);
 
    procedure Remember_Variable
-     (Name : in String;
+     (Name : String;
       Var  : out Integer_32);
 
    Current_Name   : String_Access;
@@ -120,13 +120,13 @@ package body Aforth is
    Use_RL         : Boolean := True;
    --  Should the current input method use Read_Line?
 
-   procedure Start_Definition (Name : in String);
+   procedure Start_Definition (Name : String);
 
    function To_String return String;
 
-   procedure Execute_Action (Action : in Action_Type);
+   procedure Execute_Action (Action : Action_Type);
 
-   procedure Execute_Forth_Word (Addr : in Integer_32);
+   procedure Execute_Forth_Word (Addr : Integer_32);
 
    procedure Main_Loop;
 
@@ -134,29 +134,29 @@ package body Aforth is
 
    procedure Jump;
    procedure Jump_If_False;
-   procedure Patch_Jump (To_Patch : in Integer_32; Target : in Integer_32);
+   procedure Patch_Jump (To_Patch : Integer_32; Target : Integer_32);
 
-   procedure Add_To_Compilation_Buffer (Ada_Proc : in Ada_Word_Access);
-   procedure Add_To_Compilation_Buffer (Value : in Integer_32);
+   procedure Add_To_Compilation_Buffer (Ada_Proc : Ada_Word_Access);
+   procedure Add_To_Compilation_Buffer (Value : Integer_32);
 
    procedure DoDoes;
 
-   procedure Refill_Line (Buffer : in String);
+   procedure Refill_Line (Buffer : String);
 
    procedure Check_Compile_Only;
 
-   procedure Tick (Name : in String);
+   procedure Tick (Name : String);
 
-   procedure Check_Control_Structure (Reference : in Integer_32);
+   procedure Check_Control_Structure (Reference : Integer_32);
 
-   procedure Set_Last_Immediate (Dict : in Dictionary_Access);
-   procedure Set_Last_Inline (Dict : in Dictionary_Access);
+   procedure Set_Last_Immediate (Dict : Dictionary_Access);
+   procedure Set_Last_Inline (Dict : Dictionary_Access);
 
    -------------------------------
    -- Add_To_Compilation_Buffer --
    -------------------------------
 
-   procedure Add_To_Compilation_Buffer (Action : in Action_Type) is
+   procedure Add_To_Compilation_Buffer (Action : Action_Type) is
    begin
       Check_Compile_Only;
 
@@ -181,7 +181,7 @@ package body Aforth is
    -- Add_To_Compilation_Buffer --
    -------------------------------
 
-   procedure Add_To_Compilation_Buffer (Ada_Proc : in Ada_Word_Access) is
+   procedure Add_To_Compilation_Buffer (Ada_Proc : Ada_Word_Access) is
    begin
       Add_To_Compilation_Buffer
         (Action_Type'(Kind      => Ada_Word,
@@ -193,7 +193,7 @@ package body Aforth is
    -- Add_To_Compilation_Buffer --
    -------------------------------
 
-   procedure Add_To_Compilation_Buffer (Value : in Integer_32) is
+   procedure Add_To_Compilation_Buffer (Value : Integer_32) is
    begin
       Add_To_Compilation_Buffer
         (Action_Type'(Kind      => Number,
@@ -274,7 +274,7 @@ package body Aforth is
    -- Check_Control_Structure --
    -----------------------------
 
-   procedure Check_Control_Structure (Reference : in Integer_32) is
+   procedure Check_Control_Structure (Reference : Integer_32) is
    begin
       if Pop /= Reference then
          raise Unbalanced_Control_Structure;
@@ -458,7 +458,7 @@ package body Aforth is
    -- Execute_Action --
    --------------------
 
-   procedure Execute_Action (Action : in Action_Type) is
+   procedure Execute_Action (Action : Action_Type) is
    begin
       case Action.Kind is
          when Ada_Word =>
@@ -474,7 +474,7 @@ package body Aforth is
    -- Execute_Forth_Word --
    ------------------------
 
-   procedure Execute_Forth_Word (Addr : in Integer_32) is
+   procedure Execute_Forth_Word (Addr : Integer_32) is
    begin
       Push (Return_Stack, Current_IP);
       Current_IP := Addr;
@@ -672,7 +672,7 @@ package body Aforth is
    -- Include_File --
    ------------------
 
-   procedure Include_File (File_Name : in String)
+   procedure Include_File (File_Name : String)
    is
       Previous_Input : constant File_Access := Current_Input;
       File           : File_Type;
@@ -766,7 +766,7 @@ package body Aforth is
    -- Interpret_Line --
    --------------------
 
-   procedure Interpret_Line (Line : in String) is
+   procedure Interpret_Line (Line : String) is
    begin
       Refill_Line (Line);
       Interpret;
@@ -884,10 +884,10 @@ package body Aforth is
    --------------------------------
 
    procedure Make_And_Remember_Variable
-     (Name          : in String;
+     (Name          : String;
       Var           : out Integer_32_Access;
-      Size          : in Integer_32 := 4;
-      Initial_Value : in Integer_32 := 0)
+      Size          : Integer_32 := 4;
+      Initial_Value : Integer_32 := 0)
    is
    begin
       Make_Variable (Name, Size, Initial_Value);
@@ -899,10 +899,10 @@ package body Aforth is
    --------------------------------
 
    procedure Make_And_Remember_Variable
-     (Name          : in String;
+     (Name          : String;
       Var           : out Integer_32;
-      Size          : in Integer_32 := 4;
-      Initial_Value : in Integer_32 := 0)
+      Size          : Integer_32 := 4;
+      Initial_Value : Integer_32 := 0)
    is
    begin
       Make_Variable (Name, Size, Initial_Value);
@@ -914,9 +914,9 @@ package body Aforth is
    -------------------
 
    procedure Make_Variable
-     (Name          : in String;
-      Size          : in Integer_32 := 4;
-      Initial_Value : in Integer_32 := 0)
+     (Name          : String;
+      Size          : Integer_32 := 4;
+      Initial_Value : Integer_32 := 0)
    is
    begin
       if Size = 4 then
@@ -964,7 +964,7 @@ package body Aforth is
    -- Patch_Jump --
    ----------------
 
-   procedure Patch_Jump (To_Patch : in Integer_32; Target : in Integer_32) is
+   procedure Patch_Jump (To_Patch : Integer_32; Target : Integer_32) is
    begin
       pragma Assert (To_Patch < Compilation_Index);
       pragma Assert (Target <= Compilation_Index);
@@ -1100,7 +1100,7 @@ package body Aforth is
    -- Push --
    ----------
 
-   procedure Push (S : access Stack_Type; X : in Integer_32) is
+   procedure Push (S : access Stack_Type; X : Integer_32) is
    begin
       if S.Top = S.Data'Last then
          raise Stack_Overflow;
@@ -1113,7 +1113,7 @@ package body Aforth is
    -- Push --
    ----------
 
-   procedure Push (X : in Integer_32) is
+   procedure Push (X : Integer_32) is
    begin
       Push (Data_Stack, X);
    end Push;
@@ -1122,7 +1122,7 @@ package body Aforth is
    -- Push --
    ----------
 
-   procedure Push (B : in Boolean) is
+   procedure Push (B : Boolean) is
    begin
       if B then
          Push (-1);
@@ -1135,7 +1135,7 @@ package body Aforth is
    -- Push_64 --
    -------------
 
-   procedure Push_64 (X : in Integer_64) is
+   procedure Push_64 (X : Integer_64) is
    begin
       Push_Unsigned_64 (To_Unsigned_64 (X));
    end Push_64;
@@ -1144,7 +1144,7 @@ package body Aforth is
    -- Push_Unsigned --
    -------------------
 
-   procedure Push_Unsigned (X : in Unsigned_32) is
+   procedure Push_Unsigned (X : Unsigned_32) is
    begin
       Push (To_Integer_32 (X));
    end Push_Unsigned;
@@ -1153,7 +1153,7 @@ package body Aforth is
    -- Push_Unsigned_64 --
    ----------------------
 
-   procedure Push_Unsigned_64 (X : in Unsigned_64) is
+   procedure Push_Unsigned_64 (X : Unsigned_64) is
    begin
       Push_Unsigned (Unsigned_32 (X mod (2 ** 32)));
       Push_Unsigned (Unsigned_32 (X / 2 ** 32));
@@ -1236,7 +1236,7 @@ package body Aforth is
    -- Refill_Line --
    -----------------
 
-   procedure Refill_Line (Buffer : in String) is
+   procedure Refill_Line (Buffer : String) is
       Last : constant Natural := Natural'Min (Buffer'Length, 1024);
    begin
       for I in 1 .. Integer'Min (Buffer'Length, 1024) loop
@@ -1251,8 +1251,8 @@ package body Aforth is
    --------------
 
    procedure Register
-     (Name   : in String;
-      Action : in Action_Type)
+     (Name   : String;
+      Action : Action_Type)
    is
       Old_Dict : Dictionary_Access := Dict;
    begin
@@ -1268,9 +1268,9 @@ package body Aforth is
    -----------------------
 
    procedure Register_Ada_Word
-     (Name      : in String;
-      Word      : in Ada_Word_Access;
-      Immediate : in Boolean := False)
+     (Name      : String;
+      Word      : Ada_Word_Access;
+      Immediate : Boolean := False)
    is
    begin
       --  Create a Forth wrapper around an Ada word so that its address
@@ -1290,8 +1290,8 @@ package body Aforth is
    -----------------------
 
    procedure Register_Constant
-     (Name  : in String;
-      Value : in Integer_32)
+     (Name  : String;
+      Value : Integer_32)
    is
    begin
       Start_Definition (Name);
@@ -1304,7 +1304,7 @@ package body Aforth is
    -----------------------
 
    procedure Remember_Variable
-     (Name : in String;
+     (Name : String;
       Var  : out Integer_32_Access)
    is
    begin
@@ -1320,7 +1320,7 @@ package body Aforth is
    -----------------------
 
    procedure Remember_Variable
-     (Name : in String;
+     (Name : String;
       Var  : out Integer_32)
    is
    begin
@@ -1517,7 +1517,7 @@ package body Aforth is
    -- Set_Last_Immediate --
    ------------------------
 
-   procedure Set_Last_Immediate (Dict : in Dictionary_Access) is
+   procedure Set_Last_Immediate (Dict : Dictionary_Access) is
    begin
       Dict (Dict'Last) .Action.Immediate := True;
    end Set_Last_Immediate;
@@ -1526,7 +1526,7 @@ package body Aforth is
    -- Set_Last_Inline --
    ---------------------
 
-   procedure Set_Last_Inline (Dict : in Dictionary_Access) is
+   procedure Set_Last_Inline (Dict : Dictionary_Access) is
    begin
       Dict (Dict'Last) .Action.Inline := True;
    end Set_Last_Inline;
@@ -1566,7 +1566,7 @@ package body Aforth is
    -- Start_Definition --
    ----------------------
 
-   procedure Start_Definition (Name : in String) is
+   procedure Start_Definition (Name : String) is
    begin
       if Name /= "" then
          Current_Name := new String'(Name);
@@ -1595,7 +1595,7 @@ package body Aforth is
    -- Store --
    -----------
 
-   procedure Store (Addr : in Integer_32; Value : in Integer_32) is
+   procedure Store (Addr : Integer_32; Value : Integer_32) is
    begin
       Push (Value);
       Push (Addr);
@@ -1619,7 +1619,7 @@ package body Aforth is
    -- Tick --
    ----------
 
-   procedure Tick (Name : in String) is
+   procedure Tick (Name : String) is
       A : constant Action_Type := Find (Name);
    begin
       Push (A.Forth_Proc);

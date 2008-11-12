@@ -9,11 +9,11 @@ package Aforth is
    Stack_Overflow  : exception;
    Stack_Underflow : exception;
 
-   procedure Push (X : in Integer_32);
-   procedure Push_Unsigned (X : in Unsigned_32);
-   procedure Push_Unsigned_64 (X : in Unsigned_64);
-   procedure Push_64 (X : in Integer_64);
-   procedure Push (B : in Boolean);
+   procedure Push (X : Integer_32);
+   procedure Push_Unsigned (X : Unsigned_32);
+   procedure Push_Unsigned_64 (X : Unsigned_64);
+   procedure Push_64 (X : Integer_64);
+   procedure Push (B : Boolean);
    function Pop return Integer_32;
    function Pop_Unsigned return Unsigned_32;
    function Pop_64 return Integer_64;
@@ -29,40 +29,40 @@ package Aforth is
    type Integer_32_Access is access all Integer_32;
 
    procedure Make_And_Remember_Variable
-     (Name          : in String;
+     (Name          : String;
       Var           : out Integer_32_Access;
-      Size          : in Integer_32 := 4;
-      Initial_Value : in Integer_32 := 0);
+      Size          : Integer_32 := 4;
+      Initial_Value : Integer_32 := 0);
 
    procedure Make_And_Remember_Variable
-     (Name          : in String;
+     (Name          : String;
       Var           : out Integer_32;
-      Size          : in Integer_32 := 4;
-      Initial_Value : in Integer_32 := 0);
+      Size          : Integer_32 := 4;
+      Initial_Value : Integer_32 := 0);
 
    function Fetch (Addr : Integer_32) return Integer_32;
    function Cfetch (Addr : Integer_32) return Integer_32;
-   procedure Store (Addr : in Integer_32; Value : in Integer_32);
+   procedure Store (Addr : Integer_32; Value : Integer_32);
 
    procedure Make_Variable
-     (Name          : in String;
-      Size          : in Integer_32 := 4;
-      Initial_Value : in Integer_32 := 0);
+     (Name          : String;
+      Size          : Integer_32 := 4;
+      Initial_Value : Integer_32 := 0);
 
    type Ada_Word_Access is access procedure;
 
    procedure Register_Ada_Word
-     (Name      : in String;
-      Word      : in Ada_Word_Access;
-      Immediate : in Boolean := False);
+     (Name      : String;
+      Word      : Ada_Word_Access;
+      Immediate : Boolean := False);
 
    procedure Register_Constant
-     (Name  : in String;
-      Value : in Integer_32);
+     (Name  : String;
+      Value : Integer_32);
 
-   procedure Include_File (File_Name : in String);
+   procedure Include_File (File_Name : String);
 
-   procedure Interpret_Line (Line : in String);
+   procedure Interpret_Line (Line : String);
 
    Compile_Only                 : exception;
    Unbalanced_Control_Structure : exception;
