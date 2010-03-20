@@ -1,0 +1,7 @@
+b~*.ad?
+*.ali
+*.o
+test_aforth
+aforth-builtins.ad?
+*~
+\#*\#
