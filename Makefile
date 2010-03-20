@@ -12,7 +12,7 @@ install:: $(PROGRAMS)
 %.ads %.adb: %.fs
 	$(PYTHON) embed.py $<
 
-aforth-builtins.ads aforth-builtins.adb: builtins.fs
+aforth-builtins.ads aforth-builtins.adb: builtins.fs embed.py
 	$(PYTHON) embed.py $< Aforth.Builtins
 
 test_aforth: never aforth-builtins.ads aforth-builtins.adb
