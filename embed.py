@@ -19,28 +19,32 @@ outbody = open("%s.adb" % adafile, "w")
 if not adafile.startswith('aforth-'):
     outbody.write("""with Aforth;
 pragma Elaborate_All (Aforth);""")
-    
+
 outbody.write("""package body %s is
 begin
 """ % ada)
 
-def split(l):
-    r = ''
-    lines = []
-    while len(l) > 40:
-        lines.append(l[:40])
-        l = l[40:]
-    if l: lines.append(l)
-    for n, l in enumerate(lines):
-        if n: r += ' &\n      '
-        r += '"%s"' % l.replace('"', '""')
-    return r
+# Snippet copied from http://code.activestate.com/recipes/148061/
+# (PSF license)
+def wrap(text, width):
+    """
+    A word-wrap function that preserves existing line breaks
+    and most spaces in the text. Expects that existing line
+    breaks are posix newlines (\n).
+    """
+    return reduce(lambda line, word, width=width: '%s%s%s' %
+                  (line,
+                   ' \n'[(len(line)-line.rfind('\n')-1
+                          + len(word.split('\n',1)[0]
+                                ) >= width)],
+                   word),
+                  text.split(' '))
 
-for l in open(sys.argv[1]):
-    while l[-1:] in ["\r", "\n"]: l = l[:-1]
-    if not l: continue
-    outbody.write ('   Aforth.Interpret_Line (%s);\n' %
-                   split(l))
+# Make sure we don't split lines after POSTPONE
+text = wrap(open(sys.argv[1]).read().replace('POSTPONE ', 'POSTPONE_'), 48).replace('POSTPONE_', 'POSTPONE ')
+
+for l in text.splitlines():
+    outbody.write ('   Aforth.Interpret_Line ("%s");\n' % l.replace('"', '""'))
 
 outbody.write("end %s;\n" % ada)
 
