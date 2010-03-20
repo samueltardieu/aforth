@@ -531,7 +531,7 @@ package body Aforth is
             return Dict (I) .Action;
          end if;
       end loop;
-      Raise_Exception (Not_Found'Identity, Name);
+      raise Not_Found with Name;
    end Find;
 
    ---------------
@@ -1092,7 +1092,7 @@ package body Aforth is
             Add_To_Compilation_Buffer (Cell'Value (W));
          exception
             when Constraint_Error =>
-               Raise_Exception (Not_Found'Identity, W);
+               raise Not_Found with W;
          end;
    end Postpone;
 
