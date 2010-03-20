@@ -4,17 +4,19 @@ package Aforth is
 
    pragma Elaborate_Body;
 
-   type Integer_32_Array is array (Positive range <>) of Integer_32;
+   type Cell is new Integer_32;
+
+   type Cell_Array is array (Positive range <>) of Cell;
 
    Stack_Overflow  : exception;
    Stack_Underflow : exception;
 
-   procedure Push (X : Integer_32);
+   procedure Push (X : Cell);
    procedure Push_Unsigned (X : Unsigned_32);
    procedure Push_Unsigned_64 (X : Unsigned_64);
    procedure Push_64 (X : Integer_64);
    procedure Push (B : Boolean);
-   function Pop return Integer_32;
+   function Pop return Cell;
    function Pop_Unsigned return Unsigned_32;
    function Pop_64 return Integer_64;
    function Pop_Unsigned_64 return Unsigned_64;
@@ -26,28 +28,28 @@ package Aforth is
    Data_Stack   : Stack_Access;
    Return_Stack : Stack_Access;
 
-   type Integer_32_Access is access all Integer_32;
+   type Cell_Access is access all Cell;
 
    procedure Make_And_Remember_Variable
      (Name          : String;
-      Var           : out Integer_32_Access;
-      Size          : Integer_32 := 4;
-      Initial_Value : Integer_32 := 0);
+      Var           : out Cell_Access;
+      Size          : Cell := 4;
+      Initial_Value : Cell := 0);
 
    procedure Make_And_Remember_Variable
      (Name          : String;
-      Var           : out Integer_32;
-      Size          : Integer_32 := 4;
-      Initial_Value : Integer_32 := 0);
+      Var           : out Cell;
+      Size          : Cell := 4;
+      Initial_Value : Cell := 0);
 
-   function Fetch (Addr : Integer_32) return Integer_32;
-   function Cfetch (Addr : Integer_32) return Integer_32;
-   procedure Store (Addr : Integer_32; Value : Integer_32);
+   function Fetch (Addr : Cell) return Cell;
+   function Cfetch (Addr : Cell) return Cell;
+   procedure Store (Addr : Cell; Value : Cell);
 
    procedure Make_Variable
      (Name          : String;
-      Size          : Integer_32 := 4;
-      Initial_Value : Integer_32 := 0);
+      Size          : Cell := 4;
+      Initial_Value : Cell := 0);
 
    type Ada_Word_Access is access procedure;
 
@@ -58,7 +60,7 @@ package Aforth is
 
    procedure Register_Constant
      (Name  : String;
-      Value : Integer_32);
+      Value : Cell);
 
    procedure Include_File (File_Name : String);
 
@@ -148,7 +150,7 @@ private
    Stack_Max_Depth : constant := 50;
 
    type Stack_Type is limited record
-      Data : Integer_32_Array (1 .. Stack_Max_Depth);
+      Data : Cell_Array (1 .. Stack_Max_Depth);
       Top  : Natural range 0 .. Stack_Max_Depth := 0;
    end record;
 

@@ -18,10 +18,10 @@ package body Aforth is
          when Ada_Word =>
             Ada_Proc   : Ada_Word_Access;
          when Forth_Word =>
-            Forth_Proc : Integer_32;
+            Forth_Proc : Cell;
             Inline     : Boolean;
          when Number =>
-            Value      : Integer_32;
+            Value      : Cell;
       end case;
    end record;
 
@@ -33,13 +33,13 @@ package body Aforth is
    function Find (Name : String) return Action_Type;
    --  May raise Not_Found
 
-   Compilation_Buffer : array (Integer_32'(1) .. 16384) of Action_Type;
-   Compilation_Index  : Integer_32 := 1;
+   Compilation_Buffer : array (Cell'(1) .. 16384) of Action_Type;
+   Compilation_Index  : Cell := 1;
 
    procedure Add_To_Compilation_Buffer (Action : Action_Type);
 
-   package Integer_32_IO is new Ada.Text_IO.Integer_IO (Integer_32);
-   use Integer_32_IO;
+   package Cell_IO is new Ada.Text_IO.Integer_IO (Cell);
+   use Cell_IO;
 
    type String_Access is access String;
 
@@ -57,21 +57,21 @@ package body Aforth is
 
    Dict : Dictionary_Access;
 
-   type Byte_Array is array (Integer_32 range <>) of aliased Unsigned_8;
+   type Byte_Array is array (Cell range <>) of aliased Unsigned_8;
 
    Memory : Byte_Array (0 .. 65535) := (others => 0);
 
    type Byte_Access is access all Unsigned_8;
 
    pragma Warnings (Off);
-   function To_Integer_32_Access is
-      new Ada.Unchecked_Conversion (Byte_Access, Integer_32_Access);
+   function To_Cell_Access is
+      new Ada.Unchecked_Conversion (Byte_Access, Cell_Access);
    pragma Warnings (On);
 
    function To_Unsigned_32 is
-      new Ada.Unchecked_Conversion (Integer_32, Unsigned_32);
-   function To_Integer_32 is
-      new Ada.Unchecked_Conversion (Unsigned_32, Integer_32);
+      new Ada.Unchecked_Conversion (Cell, Unsigned_32);
+   function To_Cell is
+      new Ada.Unchecked_Conversion (Unsigned_32, Cell);
    function To_Unsigned_64 is
       new Ada.Unchecked_Conversion (Integer_64, Unsigned_64);
    function To_Integer_64 is
@@ -80,20 +80,20 @@ package body Aforth is
    procedure Free is
       new Ada.Unchecked_Deallocation (String, String_Access);
 
-   procedure Push (S : access Stack_Type; X : Integer_32);
+   procedure Push (S : access Stack_Type; X : Cell);
    --  May raise stack overflow
 
-   function Pop (S : access Stack_Type) return Integer_32;
+   function Pop (S : access Stack_Type) return Cell;
    --  May raise stack underflow
 
    Already_Handled : exception;
 
-   Here      : Integer_32_Access;
-   Base      : Integer_32_Access;
-   TIB       : Integer_32;
-   TIB_Count : Integer_32_Access;
-   IN_Ptr    : Integer_32_Access;
-   State     : Integer_32_Access;
+   Here      : Cell_Access;
+   Base      : Cell_Access;
+   TIB       : Cell;
+   TIB_Count : Cell_Access;
+   IN_Ptr    : Cell_Access;
+   State     : Cell_Access;
 
    Forth_Exit : constant Action_Type := (Kind       => Forth_Word,
                                          Immediate  => True,
@@ -107,15 +107,15 @@ package body Aforth is
 
    procedure Remember_Variable
      (Name : String;
-      Var  : out Integer_32_Access);
+      Var  : out Cell_Access);
 
    procedure Remember_Variable
      (Name : String;
-      Var  : out Integer_32);
+      Var  : out Cell);
 
    Current_Name   : String_Access;
    Current_Action : Action_Type (Forth_Word);
-   Current_IP     : Integer_32 := -1;
+   Current_IP     : Cell := -1;
 
    Use_RL         : Boolean := True;
    --  Should the current input method use Read_Line?
@@ -126,7 +126,7 @@ package body Aforth is
 
    procedure Execute_Action (Action : Action_Type);
 
-   procedure Execute_Forth_Word (Addr : Integer_32);
+   procedure Execute_Forth_Word (Addr : Cell);
 
    procedure Main_Loop;
 
@@ -134,10 +134,10 @@ package body Aforth is
 
    procedure Jump;
    procedure Jump_If_False;
-   procedure Patch_Jump (To_Patch : Integer_32; Target : Integer_32);
+   procedure Patch_Jump (To_Patch : Cell; Target : Cell);
 
    procedure Add_To_Compilation_Buffer (Ada_Proc : Ada_Word_Access);
-   procedure Add_To_Compilation_Buffer (Value : Integer_32);
+   procedure Add_To_Compilation_Buffer (Value : Cell);
 
    procedure DoDoes;
 
@@ -147,7 +147,7 @@ package body Aforth is
 
    procedure Tick (Name : String);
 
-   procedure Check_Control_Structure (Reference : Integer_32);
+   procedure Check_Control_Structure (Reference : Cell);
 
    procedure Set_Last_Immediate (Dict : Dictionary_Access);
    procedure Set_Last_Inline (Dict : Dictionary_Access);
@@ -164,7 +164,7 @@ package body Aforth is
 
       if Action.Kind = Forth_Word and then Action.Inline then
          declare
-            Index : Integer_32 := Action.Forth_Proc;
+            Index : Cell := Action.Forth_Proc;
          begin
             while Compilation_Buffer (Index) /= Forth_Exit loop
                Add_To_Compilation_Buffer (Compilation_Buffer (Index));
@@ -193,7 +193,7 @@ package body Aforth is
    -- Add_To_Compilation_Buffer --
    -------------------------------
 
-   procedure Add_To_Compilation_Buffer (Value : Integer_32) is
+   procedure Add_To_Compilation_Buffer (Value : Cell) is
    begin
       Add_To_Compilation_Buffer
         (Action_Type'(Kind      => Number,
@@ -245,14 +245,14 @@ package body Aforth is
 
    procedure Cfetch is
    begin
-      Push (Integer_32 (Memory (Pop)));
+      Push (Cell (Memory (Pop)));
    end Cfetch;
 
    ------------
    -- Cfetch --
    ------------
 
-   function Cfetch (Addr : Integer_32) return Integer_32 is
+   function Cfetch (Addr : Cell) return Cell is
    begin
       Push (Addr);
       Cfetch;
@@ -274,7 +274,7 @@ package body Aforth is
    -- Check_Control_Structure --
    -----------------------------
 
-   procedure Check_Control_Structure (Reference : Integer_32) is
+   procedure Check_Control_Structure (Reference : Cell) is
    begin
       if Pop /= Reference then
          raise Unbalanced_Control_Structure;
@@ -326,7 +326,7 @@ package body Aforth is
    procedure Comma is
    begin
       pragma Warnings (Off);
-      To_Integer_32_Access (Memory (Here.all) 'Access) .all := Pop;
+      To_Cell_Access (Memory (Here.all) 'Access) .all := Pop;
       pragma Warnings (On);
       Here.all := Here.all + 4;
    end Comma;
@@ -348,7 +348,7 @@ package body Aforth is
    ------------
 
    procedure Cstore is
-      Addr : constant Integer_32 := Pop;
+      Addr : constant Cell := Pop;
    begin
       Memory (Addr) := Unsigned_8 (Pop);
    end Cstore;
@@ -359,7 +359,7 @@ package body Aforth is
 
    procedure Depth is
    begin
-      Push (Integer_32 (Data_Stack.Top));
+      Push (Cell (Data_Stack.Top));
    end Depth;
 
    ------------
@@ -367,8 +367,8 @@ package body Aforth is
    ------------
 
    procedure DivMod is
-      B : constant Integer_32 := Pop;
-      A : constant Integer_32 := Pop;
+      B : constant Cell := Pop;
+      A : constant Cell := Pop;
    begin
       Push (A rem B);
       Push (A / B);
@@ -404,7 +404,7 @@ package body Aforth is
       --  one. Compilation buffer after index, call to DoDoes and exit
       --  is Compilation_Index + 3.
 
-      Does_Part : constant Integer_32 := Compilation_Index + 3;
+      Does_Part : constant Cell := Compilation_Index + 3;
    begin
       Add_To_Compilation_Buffer (Does_Part);
       Add_To_Compilation_Buffer (DoDoes'Access);
@@ -430,7 +430,7 @@ package body Aforth is
    ----------
 
    procedure Drop is
-      Value : constant Integer_32 := Pop;
+      Value : constant Cell := Pop;
       pragma Unreferenced (Value);
    begin
       null;
@@ -474,7 +474,7 @@ package body Aforth is
    -- Execute_Forth_Word --
    ------------------------
 
-   procedure Execute_Forth_Word (Addr : Integer_32) is
+   procedure Execute_Forth_Word (Addr : Cell) is
    begin
       Push (Return_Stack, Current_IP);
       Current_IP := Addr;
@@ -499,8 +499,8 @@ package body Aforth is
 
    procedure Fetch is
       pragma Warnings (Off);
-      Addr  : constant Integer_32_Access :=
-        To_Integer_32_Access (Memory (Pop)'Access);
+      Addr  : constant Cell_Access :=
+        To_Cell_Access (Memory (Pop)'Access);
       pragma Warnings (On);
    begin
       Push (Addr.all);
@@ -510,7 +510,7 @@ package body Aforth is
    -- Fetch --
    -----------
 
-   function Fetch (Addr : Integer_32) return Integer_32 is
+   function Fetch (Addr : Cell) return Cell is
    begin
       Push (Addr);
       Fetch;
@@ -654,7 +654,7 @@ package body Aforth is
    ------------------
 
    procedure Greaterequal is
-      B : constant Integer_32 := Pop;
+      B : constant Cell := Pop;
    begin
       Push (Pop >= B);
    end Greaterequal;
@@ -676,8 +676,8 @@ package body Aforth is
    is
       Previous_Input : constant File_Access := Current_Input;
       File           : File_Type;
-      Old_TIB_Count  : constant Integer_32  := TIB_Count.all;
-      Old_IN_Ptr     : constant Integer_32  := IN_Ptr.all;
+      Old_TIB_Count  : constant Cell  := TIB_Count.all;
+      Old_IN_Ptr     : constant Cell  := IN_Ptr.all;
       Old_TIB        : constant Byte_Array  :=
         Memory (TIB .. TIB + Old_TIB_Count - 1);
       Old_Use_RL     : constant Boolean     := Use_RL;
@@ -719,7 +719,7 @@ package body Aforth is
          declare
             W : constant String := Word;
             A : Action_Type;
-            I : Integer_32;
+            I : Cell;
          begin
             if W'Length = 0 then
                exit;
@@ -732,7 +732,7 @@ package body Aforth is
                exception
                   when NF : Not_Found =>
                      begin
-                        I := Integer_32'Value (W);
+                        I := Cell'Value (W);
                      exception
                         when Constraint_Error =>
                            Reraise_Occurrence (NF);
@@ -750,7 +750,7 @@ package body Aforth is
                exception
                   when NF : Not_Found =>
                      begin
-                        I := Integer_32'Value (W);
+                        I := Cell'Value (W);
                      exception
                         when Constraint_Error =>
                            Reraise_Occurrence (NF);
@@ -804,7 +804,7 @@ package body Aforth is
    -------------------
 
    procedure Jump_If_False is
-      Target : constant Integer_32 := Pop;
+      Target : constant Cell := Pop;
    begin
       if Pop = 0 then
          Current_IP := Target;
@@ -819,7 +819,7 @@ package body Aforth is
       C : Character;
    begin
       Get_Immediate (C);
-      Push (Integer_32 (Character'Pos (C)));
+      Push (Cell (Character'Pos (C)));
    end Key;
 
    -----------
@@ -885,9 +885,9 @@ package body Aforth is
 
    procedure Make_And_Remember_Variable
      (Name          : String;
-      Var           : out Integer_32_Access;
-      Size          : Integer_32 := 4;
-      Initial_Value : Integer_32 := 0)
+      Var           : out Cell_Access;
+      Size          : Cell := 4;
+      Initial_Value : Cell := 0)
    is
    begin
       Make_Variable (Name, Size, Initial_Value);
@@ -900,9 +900,9 @@ package body Aforth is
 
    procedure Make_And_Remember_Variable
      (Name          : String;
-      Var           : out Integer_32;
-      Size          : Integer_32 := 4;
-      Initial_Value : Integer_32 := 0)
+      Var           : out Cell;
+      Size          : Cell := 4;
+      Initial_Value : Cell := 0)
    is
    begin
       Make_Variable (Name, Size, Initial_Value);
@@ -915,8 +915,8 @@ package body Aforth is
 
    procedure Make_Variable
      (Name          : String;
-      Size          : Integer_32 := 4;
-      Initial_Value : Integer_32 := 0)
+      Size          : Cell := 4;
+      Initial_Value : Cell := 0)
    is
    begin
       if Size = 4 then
@@ -964,7 +964,7 @@ package body Aforth is
    -- Patch_Jump --
    ----------------
 
-   procedure Patch_Jump (To_Patch : Integer_32; Target : Integer_32) is
+   procedure Patch_Jump (To_Patch : Cell; Target : Cell) is
    begin
       pragma Assert (To_Patch < Compilation_Index);
       pragma Assert (Target <= Compilation_Index);
@@ -995,7 +995,7 @@ package body Aforth is
    ---------------
 
    procedure Plus_Loop is
-      To_Patch : Integer_32;
+      To_Patch : Cell;
    begin
       Check_Control_Structure (Do_Loop_Reference);
 
@@ -1025,7 +1025,7 @@ package body Aforth is
    -- Pop --
    ---------
 
-   function Pop (S : access Stack_Type) return Integer_32 is
+   function Pop (S : access Stack_Type) return Cell is
    begin
       if S.Top = 0 then
          raise Stack_Underflow;
@@ -1038,7 +1038,7 @@ package body Aforth is
    -- Pop --
    ---------
 
-   function Pop return Integer_32 is
+   function Pop return Cell is
    begin
       return Pop (Data_Stack);
    end Pop;
@@ -1089,7 +1089,7 @@ package body Aforth is
    exception
       when Not_Found =>
          begin
-            Add_To_Compilation_Buffer (Integer_32'Value (W));
+            Add_To_Compilation_Buffer (Cell'Value (W));
          exception
             when Constraint_Error =>
                Raise_Exception (Not_Found'Identity, W);
@@ -1100,7 +1100,7 @@ package body Aforth is
    -- Push --
    ----------
 
-   procedure Push (S : access Stack_Type; X : Integer_32) is
+   procedure Push (S : access Stack_Type; X : Cell) is
    begin
       if S.Top = S.Data'Last then
          raise Stack_Overflow;
@@ -1113,7 +1113,7 @@ package body Aforth is
    -- Push --
    ----------
 
-   procedure Push (X : Integer_32) is
+   procedure Push (X : Cell) is
    begin
       Push (Data_Stack, X);
    end Push;
@@ -1146,7 +1146,7 @@ package body Aforth is
 
    procedure Push_Unsigned (X : Unsigned_32) is
    begin
-      Push (To_Integer_32 (X));
+      Push (To_Cell (X));
    end Push_Unsigned;
 
    ----------------------
@@ -1242,9 +1242,9 @@ package body Aforth is
       Last : constant Natural := Natural'Min (Buffer'Length, 1024);
    begin
       for I in 1 .. Integer'Min (Buffer'Length, 1024) loop
-         Memory (TIB + Integer_32 (I) - 1) := Character'Pos (Buffer (I));
+         Memory (TIB + Cell (I) - 1) := Character'Pos (Buffer (I));
       end loop;
-      TIB_Count.all := Integer_32 (Last);
+      TIB_Count.all := Cell (Last);
       IN_Ptr.all := 0;
    end Refill_Line;
 
@@ -1293,7 +1293,7 @@ package body Aforth is
 
    procedure Register_Constant
      (Name  : String;
-      Value : Integer_32)
+      Value : Cell)
    is
    begin
       Start_Definition (Name);
@@ -1307,13 +1307,13 @@ package body Aforth is
 
    procedure Remember_Variable
      (Name : String;
-      Var  : out Integer_32_Access)
+      Var  : out Cell_Access)
    is
    begin
       Tick (Name);
       To_Body;
       pragma Warnings (Off);
-      Var := To_Integer_32_Access (Memory (Pop) 'Access);
+      Var := To_Cell_Access (Memory (Pop) 'Access);
       pragma Warnings (On);
    end Remember_Variable;
 
@@ -1323,7 +1323,7 @@ package body Aforth is
 
    procedure Remember_Variable
      (Name : String;
-      Var  : out Integer_32)
+      Var  : out Cell)
    is
    begin
       Tick (Name);
@@ -1342,7 +1342,7 @@ package body Aforth is
       Add_To_Compilation_Buffer (Jump'Access);
       loop
          declare
-            To_Fix : constant Integer_32 := Pop;
+            To_Fix : constant Cell := Pop;
          begin
             exit when To_Fix = -1;
             Patch_Jump (To_Fix, Compilation_Index);
@@ -1357,7 +1357,7 @@ package body Aforth is
    procedure Roll is
       Offset : constant Integer    := Integer (Pop);
       Index  : constant Integer    := Data_Stack.Top - Offset;
-      Moved  : constant Integer_32 := Data_Stack.Data (Index);
+      Moved  : constant Cell := Data_Stack.Data (Index);
    begin
       Data_Stack.Data (Index .. Data_Stack.Top - 1) :=
         Data_Stack.Data (Index + 1 .. Data_Stack.Top);
@@ -1392,8 +1392,8 @@ package body Aforth is
       B : constant Integer_64 := Integer_64 (Pop);
       A : constant Integer_64 := Integer_64 (Pop);
    begin
-      Push (Integer_32 ((A * B) mod C));
-      Push (Integer_32 (A * B / C));
+      Push (Cell ((A * B) mod C));
+      Push (Cell (A * B / C));
    end ScaleMod;
 
    ---------
@@ -1401,7 +1401,7 @@ package body Aforth is
    ---------
 
    procedure See is
-      Index  : Integer_32;
+      Index  : Cell;
       Action : Action_Type;
       Found  : Boolean;
    begin
@@ -1409,7 +1409,7 @@ package body Aforth is
       Index := Pop;
       loop
          Found := False;
-         Put (Integer_32'Image (Index) & ": ");
+         Put (Cell'Image (Index) & ": ");
          Action := Compilation_Buffer (Index);
          if Action = Forth_Exit then
             Put_Line ("EXIT");
@@ -1418,7 +1418,7 @@ package body Aforth is
          case Action.Kind is
             when Number =>
                declare
-                  S : constant String := Integer_32'Image (Action.Value);
+                  S : constant String := Cell'Image (Action.Value);
                begin
                   Found := True;
                   if Action.Value >= 0 then
@@ -1451,7 +1451,7 @@ package body Aforth is
                   for I in reverse Dict'Range loop
                      if Dict (I) .Action.Kind = Forth_Word then
                         declare
-                           Idx : constant Integer_32 :=
+                           Idx : constant Cell :=
                              Dict (I) .Action.Forth_Proc;
                            A : constant Action_Type :=
                              Compilation_Buffer (Idx);
@@ -1560,8 +1560,8 @@ package body Aforth is
       N : constant Integer_64 := Integer_64 (Pop);
       D : constant Integer_64 := Pop_64;
    begin
-      Push (Integer_32 (D mod N));
-      Push (Integer_32 (D / N));
+      Push (Cell (D mod N));
+      Push (Cell (D / N));
    end Sm_Slash_Rem;
 
    ----------------------
@@ -1586,8 +1586,8 @@ package body Aforth is
    procedure Store
    is
       pragma Warnings (Off);
-      Addr  : constant Integer_32_Access :=
-        To_Integer_32_Access (Memory (Pop)'Access);
+      Addr  : constant Cell_Access :=
+        To_Cell_Access (Memory (Pop)'Access);
       pragma Warnings (On);
    begin
       Addr.all := Pop;
@@ -1597,7 +1597,7 @@ package body Aforth is
    -- Store --
    -----------
 
-   procedure Store (Addr : Integer_32; Value : Integer_32) is
+   procedure Store (Addr : Cell; Value : Cell) is
    begin
       Push (Value);
       Push (Addr);
@@ -1610,8 +1610,8 @@ package body Aforth is
 
    procedure Swap
    is
-      A : constant Integer_32 := Pop;
-      B : constant Integer_32 := Pop;
+      A : constant Cell := Pop;
+      B : constant Cell := Pop;
    begin
       Push (A);
       Push (B);
@@ -1669,7 +1669,7 @@ package body Aforth is
 
    function To_String return String is
       Length : constant Natural    := Natural (Pop);
-      Addr   : Integer_32          := Pop;
+      Addr   : Cell          := Pop;
       Result : String (1 .. Length);
    begin
       for I in Result'Range loop
@@ -1684,8 +1684,8 @@ package body Aforth is
    -------------
 
    procedure Two_Dup is
-      A : constant Integer_32 := Pop;
-      B : constant Integer_32 := Pop;
+      A : constant Cell := Pop;
+      B : constant Cell := Pop;
    begin
       Push (B);
       Push (A);
@@ -1824,7 +1824,7 @@ begin
 
    --  Store and register HERE at position 0 -- bootstrap STATE at position 4
    pragma Warnings (Off);
-   State := To_Integer_32_Access (Memory (4)'Access);
+   State := To_Cell_Access (Memory (4)'Access);
    pragma Warnings (On);
    Store (0, 4);
    Start_Definition ("HERE");
