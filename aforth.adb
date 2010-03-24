@@ -4,7 +4,7 @@ with Ada.Real_Time;              use Ada.Real_Time;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
-with Read_Line;
+with Readline;
 
 package body Aforth is
 
@@ -1229,9 +1229,9 @@ package body Aforth is
       if Use_RL then
          if State.all = 0 then
             Cr;
-            Refill_Line (Read_Line ("ok> "));
+            Refill_Line (Readline.Read_Line ("ok> "));
          else
-            Refill_Line (Read_Line ("] "));
+            Refill_Line (Readline.Read_Line ("] "));
          end if;
       else
          declare
