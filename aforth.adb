@@ -54,14 +54,11 @@ package body Aforth is
       Action : Action_Type;
    end record;
 
-   type Dictionary_Array is array (Positive range <>) of Dictionary_Entry;
+   package Dictionaries is
+     new Ada.Containers.Vectors (Positive, Dictionary_Entry);
+   use Dictionaries;
 
-   type Dictionary_Access is access Dictionary_Array;
-
-   procedure Free is
-      new Ada.Unchecked_Deallocation (Dictionary_Array, Dictionary_Access);
-
-   Dict : Dictionary_Access;
+   Dict : Dictionaries.Vector;
 
    type Byte_Array is array (Cell range <>) of aliased Unsigned_8;
 
@@ -154,9 +151,6 @@ package body Aforth is
    procedure Tick (Name : String);
 
    procedure Check_Control_Structure (Reference : Cell);
-
-   procedure Set_Last_Immediate (Dict : Dictionary_Access);
-   procedure Set_Last_Inline (Dict : Dictionary_Access);
 
    -------------------------------
    -- Add_To_Compilation_Buffer --
@@ -528,11 +522,15 @@ package body Aforth is
    is
       Lower_Name : constant String := To_Lower (Name);
    begin
-      for I in reverse Dict'Range loop
-         if To_Lower (Dict (I) .Name.all) = Lower_Name then
-            pragma Assert (Dict (I) .Action.Kind = Forth_Word);
-            return Dict (I) .Action;
-         end if;
+      for I in reverse First_Index (Dict) .. Last_Index (Dict) loop
+         declare
+            Current : Dictionary_Entry renames Element (Dict, I);
+         begin
+            if To_Lower (Current.Name.all) = Lower_Name then
+               pragma Assert (Current.Action.Kind = Forth_Word);
+               return Current.Action;
+            end if;
+         end;
       end loop;
       raise Not_Found with Name;
    end Find;
@@ -1272,13 +1270,9 @@ package body Aforth is
      (Name   : String;
       Action : Action_Type)
    is
-      Old_Dict : Dictionary_Access := Dict;
    begin
-      Dict := new Dictionary_Array (Dict'First .. Dict'Last + 1);
-      Dict (Old_Dict'First .. Old_Dict'Last) := Old_Dict.all;
-      Free (Old_Dict);
-      Dict (Dict'Last) := (Name   => new String'(Name),
-                           Action => Action);
+      Append (Dict, (Name   => new String'(Name),
+                     Action => Action));
       Readline.Add_Word (Name);
    end Register;
 
@@ -1445,14 +1439,18 @@ package body Aforth is
                   end if;
                end;
             when Forth_Word =>
-               for I in reverse Dict'Range loop
-                  if Dict (I) .Action.Kind = Forth_Word and then
-                    Dict (I) .Action.Forth_Proc = Action.Forth_Proc
-                  then
-                     Found := True;
-                     Put_Line (Dict (I) .Name.all);
-                     exit;
-                  end if;
+               for I in reverse First_Index (Dict) .. Last_Index (Dict) loop
+                  declare
+                     Current : Dictionary_Entry renames Element (Dict, I);
+                  begin
+                     if Current.Action.Kind = Forth_Word and then
+                       Current.Action.Forth_Proc = Action.Forth_Proc
+                     then
+                        Found := True;
+                        Put_Line (Current.Name.all);
+                        exit;
+                     end if;
+                  end;
                end loop;
             when Ada_Word =>
                if Action.Ada_Proc = Jump'Access then
@@ -1465,25 +1463,30 @@ package body Aforth is
                   Found := True;
                   Put_Line ("<DO DOES>");
                else
-                  for I in reverse Dict'Range loop
-                     if Dict (I) .Action.Kind = Forth_Word then
-                        declare
-                           Idx : constant Cell :=
-                             Dict (I) .Action.Forth_Proc;
-                           A : constant Action_Type :=
-                             Element (Compilation_Buffer, Idx);
-                        begin
-                           if A.Kind = Ada_Word and then
-                             A.Ada_Proc = Action.Ada_Proc and then
-                             Element (Compilation_Buffer, Idx + 1) = Forth_Exit
-                           then
-                              Found := True;
-                              Put_Line (Dict (I) .Name.all &
-                                        " <Ada primitive>");
-                              exit;
-                           end if;
-                        end;
-                     end if;
+                  for I in reverse First_Index (Dict) .. Last_Index (Dict) loop
+                     declare
+                        Current : Dictionary_Entry renames Element (Dict, I);
+                     begin
+                        if Current.Action.Kind = Forth_Word then
+                           declare
+                              Idx : constant Cell :=
+                                Current.Action.Forth_Proc;
+                              A : constant Action_Type :=
+                                Element (Compilation_Buffer, Idx);
+                           begin
+                              if A.Kind = Ada_Word and then
+                                A.Ada_Proc = Action.Ada_Proc and then
+                                Element (Compilation_Buffer, Idx + 1) =
+                                  Forth_Exit
+                              then
+                                 Found := True;
+                                 Put_Line (Current.Name.all &
+                                             " <Ada primitive>");
+                                 exit;
+                              end if;
+                           end;
+                        end if;
+                     end;
                   end loop;
                end if;
          end case;
@@ -1519,8 +1522,10 @@ package body Aforth is
    -------------------
 
    procedure Set_Immediate is
+      Current : Dictionary_Entry := Last_Element (Dict);
    begin
-      Set_Last_Immediate (Dict);
+      Current.Action.Immediate := True;
+      Replace_Element (Dict, Last_Index (Dict), Current);
    end Set_Immediate;
 
    ----------------
@@ -1528,27 +1533,11 @@ package body Aforth is
    ----------------
 
    procedure Set_Inline is
+      Current : Dictionary_Entry := Last_Element (Dict);
    begin
-      Set_Last_Inline (Dict);
+      Current.Action.Inline := True;
+      Replace_Element (Dict, Last_Index (Dict), Current);
    end Set_Inline;
-
-   ------------------------
-   -- Set_Last_Immediate --
-   ------------------------
-
-   procedure Set_Last_Immediate (Dict : Dictionary_Access) is
-   begin
-      Dict (Dict'Last) .Action.Immediate := True;
-   end Set_Last_Immediate;
-
-   ---------------------
-   -- Set_Last_Inline --
-   ---------------------
-
-   procedure Set_Last_Inline (Dict : Dictionary_Access) is
-   begin
-      Dict (Dict'Last) .Action.Inline := True;
-   end Set_Last_Inline;
 
    -----------------
    -- Skip_Blanks --
@@ -1822,22 +1811,25 @@ package body Aforth is
    procedure Words is
       Len : Natural := 0;
    begin
-      for I in Dict.all'Range loop
-         Len := Len + Dict (I) .Name'Length + 1;
-         if Len > 75 then
-            New_Line;
-            Len := Dict (I) .Name'Length;
-         elsif I /= Dict.all'First then
-            Put (' ');
-         end if;
-         Put (Dict (I) .Name.all);
+      for I in First_Index (Dict) .. Last_Index (Dict) loop
+         declare
+            Current : Dictionary_Entry renames Element (Dict, I);
+         begin
+            Len := Len + Current.Name'Length + 1;
+            if Len > 75 then
+               New_Line;
+               Len := Current.Name'Length;
+            elsif I /= First_Index (Dict) then
+               Put (' ');
+            end if;
+            Put (Current.Name.all);
+         end;
       end loop;
    end Words;
 
 begin
    Data_Stack   := new Stack_Type;
    Return_Stack := new Stack_Type;
-   Dict         := new Dictionary_Array (1 .. 0);
 
    --  Store and register HERE at position 0 -- bootstrap STATE at position 4
    pragma Warnings (Off);
