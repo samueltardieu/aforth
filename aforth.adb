@@ -1,4 +1,5 @@
 with Ada.Characters.Handling;    use Ada.Characters.Handling;
+with Ada.Containers.Vectors;
 with Ada.Exceptions;             use Ada.Exceptions;
 with Ada.Real_Time;              use Ada.Real_Time;
 with Ada.Text_IO;                use Ada.Text_IO;
@@ -34,8 +35,12 @@ package body Aforth is
    function Find (Name : String) return Action_Type;
    --  May raise Not_Found
 
-   Compilation_Buffer : array (Cell'(1) .. 16384) of Action_Type;
-   Compilation_Index  : Cell := 1;
+   subtype Natural_Cell is Cell range 1 .. Cell'Last;
+   package Compilation_Buffers is
+      new Ada.Containers.Vectors (Natural_Cell, Action_Type);
+   use Compilation_Buffers;
+
+   Compilation_Buffer : Compilation_Buffers.Vector;
 
    procedure Add_To_Compilation_Buffer (Action : Action_Type);
 
@@ -167,14 +172,13 @@ package body Aforth is
          declare
             Index : Cell := Action.Forth_Proc;
          begin
-            while Compilation_Buffer (Index) /= Forth_Exit loop
-               Add_To_Compilation_Buffer (Compilation_Buffer (Index));
+            while Element (Compilation_Buffer, Index) /= Forth_Exit loop
+               Add_To_Compilation_Buffer (Element (Compilation_Buffer, Index));
                Index := Index + 1;
             end loop;
          end;
       else
-         Compilation_Buffer (Compilation_Index) := Action;
-         Compilation_Index := Compilation_Index + 1;
+         Append (Compilation_Buffer, Action);
       end if;
    end Add_To_Compilation_Buffer;
 
@@ -223,7 +227,7 @@ package body Aforth is
       --  patch when the AHEAD is resolved by a THEN.
 
    begin
-      Push (Compilation_Index);
+      Push (Last_Index (Compilation_Buffer) + 1);
       Push (Forward_Reference);
       Add_To_Compilation_Buffer (0);
       Add_To_Compilation_Buffer (Jump'Access);
@@ -316,7 +320,7 @@ package body Aforth is
 
    procedure Colon_Noname is
    begin
-      Push (Compilation_Index);
+      Push (Last_Index (Compilation_Buffer) + 1);
       Start_Definition ("");
    end Colon_Noname;
 
@@ -384,15 +388,13 @@ package body Aforth is
       --  Patch the latest exit by inserting a call to the current
       --  action.
 
-      pragma Assert (Compilation_Buffer (Compilation_Index - 1) = Forth_Exit);
-      Compilation_Buffer (Compilation_Index) :=
-        Compilation_Buffer (Compilation_Index - 1);
-      Compilation_Buffer (Compilation_Index - 1) :=
-        Action_Type'(Kind       => Forth_Word,
-                     Immediate  => True,
-                     Inline     => False,
-                     Forth_Proc => Pop);
-      Compilation_Index := Compilation_Index + 1;
+      pragma Assert (Last_Element (Compilation_Buffer) = Forth_Exit);
+      Insert (Compilation_Buffer,
+              Last_Index (Compilation_Buffer),
+              Action_Type'(Kind       => Forth_Word,
+                           Immediate  => True,
+                           Inline     => False,
+                           Forth_Proc => Pop));
    end DoDoes;
 
    ----------
@@ -405,7 +407,7 @@ package body Aforth is
       --  one. Compilation buffer after index, call to DoDoes and exit
       --  is Compilation_Index + 3.
 
-      Does_Part : constant Cell := Compilation_Index + 3;
+      Does_Part : constant Cell := Last_Index (Compilation_Buffer) + 4;
    begin
       Add_To_Compilation_Buffer (Does_Part);
       Add_To_Compilation_Buffer (DoDoes'Access);
@@ -414,7 +416,7 @@ package body Aforth is
       --  Start an unnamed word corresponding to the DOES> part
 
       Start_Definition ("");
-      pragma Assert (Compilation_Index = Does_Part);
+      pragma Assert (Last_Index (Compilation_Buffer) + 1 = Does_Part);
    end Does;
 
    ---------
@@ -482,7 +484,7 @@ package body Aforth is
       loop
          declare
             Current_Action : constant Action_Type :=
-              Compilation_Buffer (Current_IP);
+              Element (Compilation_Buffer, Current_IP);
          begin
             Current_IP := Current_IP + 1;
             if Current_Action = Forth_Exit then
@@ -561,7 +563,7 @@ package body Aforth is
 
    begin
       Push (-1);
-      Push (Compilation_Index);
+      Push (Last_Index (Compilation_Buffer) + 1);
       Push (Backward_Reference);
    end Forth_Begin;
 
@@ -583,7 +585,7 @@ package body Aforth is
    begin
       Add_To_Compilation_Buffer (Two_To_R'Access);
       Push (-1);
-      Push (Compilation_Index);
+      Push (Last_Index (Compilation_Buffer) + 1);
       Push (Do_Loop_Reference);
    end Forth_Do;
 
@@ -593,7 +595,7 @@ package body Aforth is
 
    procedure Forth_If is
    begin
-      Push (Compilation_Index);
+      Push (Last_Index (Compilation_Buffer) + 1);
       Push (Forward_Reference);
       Add_To_Compilation_Buffer (0);
       Add_To_Compilation_Buffer (Jump_If_False'Access);
@@ -615,7 +617,8 @@ package body Aforth is
    procedure Forth_Then is
    begin
       Check_Control_Structure (Forward_Reference);
-      Patch_Jump (To_Patch => Pop, Target => Compilation_Index);
+      Patch_Jump (To_Patch => Pop,
+                  Target   => Last_Index (Compilation_Buffer) + 1);
    end Forth_Then;
 
    -----------------
@@ -625,7 +628,7 @@ package body Aforth is
    procedure Forth_While is
    begin
       Check_Control_Structure (Backward_Reference);
-      Push (Compilation_Index);
+      Push (Last_Index (Compilation_Buffer) + 1);
       Swap;
       Add_To_Compilation_Buffer (0);
       Add_To_Compilation_Buffer (Jump_If_False'Access);
@@ -839,7 +842,7 @@ package body Aforth is
             Data_Stack.Data (I .. Data_Stack.Top + 1) :=
               Data_Stack.Data (I - 1 .. Data_Stack.Top);
             Data_Stack.Top := Data_Stack.Top + 1;
-            Data_Stack.Data (I - 1) := Compilation_Index;
+            Data_Stack.Data (I - 1) := Last_Index (Compilation_Buffer) + 1;
             Add_To_Compilation_Buffer (0);
             Add_To_Compilation_Buffer (Jump'Access);
             return;
@@ -975,10 +978,12 @@ package body Aforth is
    ----------------
 
    procedure Patch_Jump (To_Patch : Cell; Target : Cell) is
+      pragma Assert (To_Patch < Last_Index (Compilation_Buffer) + 1);
+      pragma Assert (Target <= Last_Index (Compilation_Buffer) + 1);
+      Current : Action_Type := Element (Compilation_Buffer, To_Patch);
    begin
-      pragma Assert (To_Patch < Compilation_Index);
-      pragma Assert (Target <= Compilation_Index);
-      Compilation_Buffer (To_Patch) .Value := Target;
+      Current.Value := Target;
+      Replace_Element (Compilation_Buffer, To_Patch, Current);
    end Patch_Jump;
 
    ----------
@@ -1024,7 +1029,8 @@ package body Aforth is
       loop
          To_Patch := Pop;
          exit when To_Patch = -1;
-         Patch_Jump (To_Patch => To_Patch, Target => Compilation_Index);
+         Patch_Jump (To_Patch => To_Patch,
+                     Target   => Last_Index (Compilation_Buffer) + 1);
       end loop;
 
       Add_To_Compilation_Buffer (Unloop'Access);
@@ -1356,7 +1362,7 @@ package body Aforth is
             To_Fix : constant Cell := Pop;
          begin
             exit when To_Fix = -1;
-            Patch_Jump (To_Fix, Compilation_Index);
+            Patch_Jump (To_Fix, Last_Index (Compilation_Buffer) + 1);
          end;
       end loop;
    end Repeat;
@@ -1421,7 +1427,7 @@ package body Aforth is
       loop
          Found := False;
          Put (Cell'Image (Index) & ": ");
-         Action := Compilation_Buffer (Index);
+         Action := Element (Compilation_Buffer, Index);
          if Action = Forth_Exit then
             Put_Line ("EXIT");
             exit;
@@ -1465,11 +1471,11 @@ package body Aforth is
                            Idx : constant Cell :=
                              Dict (I) .Action.Forth_Proc;
                            A : constant Action_Type :=
-                             Compilation_Buffer (Idx);
+                             Element (Compilation_Buffer, Idx);
                         begin
                            if A.Kind = Ada_Word and then
                              A.Ada_Proc = Action.Ada_Proc and then
-                             Compilation_Buffer (Idx + 1) = Forth_Exit
+                             Element (Compilation_Buffer, Idx + 1) = Forth_Exit
                            then
                               Found := True;
                               Put_Line (Dict (I) .Name.all &
@@ -1585,7 +1591,7 @@ package body Aforth is
          Current_Name := new String'(Name);
       end if;
       Current_Action.Immediate  := False;
-      Current_Action.Forth_Proc := Compilation_Index;
+      Current_Action.Forth_Proc := Last_Index (Compilation_Buffer) + 1;
       Compile_Mode;
       Push (Definition_Reference);
    end Start_Definition;
@@ -1662,7 +1668,7 @@ package body Aforth is
 
    procedure To_Body is
    begin
-      Push (Compilation_Buffer (Pop) .Value);
+      Push (Element (Compilation_Buffer, Pop) .Value);
    end To_Body;
 
    ----------
