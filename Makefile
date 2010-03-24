@@ -19,6 +19,7 @@ test_aforth: never aforth-builtins.ads aforth-builtins.adb
 	$(GNATMAKE) $(GNATCFLAGS) -Paforth
 
 clean:: never
-	$(RM) *.o *.ali *~ b~*.ad? $(PROGRAMS) builtins.ads builtins.adb
+	$(RM) *.o *.ali *~ b~*.ad? $(PROGRAMS) \
+	  aforth-builtins.ads aforth-builtins.adb
 
 never::
