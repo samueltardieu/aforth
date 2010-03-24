@@ -1273,6 +1273,7 @@ package body Aforth is
       Free (Old_Dict);
       Dict (Dict'Last) := (Name   => new String'(Name),
                            Action => Action);
+      Readline.Add_Word (Name);
    end Register;
 
    -----------------------
@@ -1924,4 +1925,5 @@ begin
    Register_Ada_Word ("UNUSED", Unused'Access);
    Register_Ada_Word ("WORD", Word'Access);
    Register_Ada_Word ("WORDS", Words'Access);
+   Readline.Variable_Bind ("completion-ignore-case", "on");
 end Aforth;
