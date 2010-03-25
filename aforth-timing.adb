@@ -3,14 +3,14 @@ with Ada.Real_Time; use Ada.Real_Time;
 package body Aforth.Timing is
 
    --------
-   -- Ms --
+   -- MS --
    --------
 
-   procedure Ms is
+   procedure MS is
    begin
-      delay until Clock + To_Time_Span (Duration (Float (Pop) / 1000.0));
-   end Ms;
+      delay until Clock + Milliseconds (Integer (Pop));
+   end MS;
 
 begin
-   Register_Ada_Word ("MS", Ms'Access);
+   Register_Ada_Word ("MS", MS'Access);
 end Aforth.Timing;

@@ -101,7 +101,6 @@ package Aforth is
    procedure Leave;
    procedure Literal;
    procedure Lshift;
-   procedure MS;
    procedure Mstar;
    procedure Parse;
    procedure Pick;

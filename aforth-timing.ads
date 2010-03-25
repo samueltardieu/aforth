@@ -2,6 +2,6 @@ package Aforth.Timing is
 
    pragma Elaborate_Body;
 
-   procedure Ms;
+   procedure MS;
 
 end Aforth.Timing;
