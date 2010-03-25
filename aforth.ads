@@ -22,12 +22,6 @@ package Aforth is
    function Pop_Unsigned_64 return Unsigned_64;
    --  Shortcut operating on Data_Stack
 
-   type Stack_Type is limited private;
-   type Stack_Access is access Stack_Type;
-
-   Data_Stack   : Stack_Access;
-   Return_Stack : Stack_Access;
-
    type Cell_Access is access all Cell;
 
    procedure Make_And_Remember_Variable
@@ -145,14 +139,5 @@ package Aforth is
    procedure Unused;
    procedure Word;
    procedure Words;
-
-private
-
-   Stack_Max_Depth : constant := 50;
-
-   type Stack_Type is limited record
-      Data : Cell_Array (1 .. Stack_Max_Depth);
-      Top  : Natural range 0 .. Stack_Max_Depth := 0;
-   end record;
 
 end Aforth;

@@ -83,10 +83,16 @@ package body Aforth is
    procedure Free is
       new Ada.Unchecked_Deallocation (String, String_Access);
 
-   procedure Push (S : access Stack_Type; X : Cell);
+   package Stacks is
+      new Ada.Containers.Vectors (Positive, Cell);
+   use Stacks;
+   Data_Stack   : aliased Stacks.Vector;
+   Return_Stack : aliased Stacks.Vector;
+
+   procedure Push (S : in out Stacks.Vector; X : Cell);
    --  May raise stack overflow
 
-   function Pop (S : access Stack_Type) return Cell;
+   function Pop (S : not null access Stacks.Vector) return Cell;
    --  May raise stack underflow
 
    Already_Handled : exception;
@@ -358,7 +364,7 @@ package body Aforth is
 
    procedure Depth is
    begin
-      Push (Cell (Data_Stack.Top));
+      Push (Cell (Length (Data_Stack)));
    end Depth;
 
    ------------
@@ -482,7 +488,7 @@ package body Aforth is
          begin
             Current_IP := Current_IP + 1;
             if Current_Action = Forth_Exit then
-               Current_IP := Pop (Return_Stack);
+               Current_IP := Pop (Return_Stack'Access);
                return;
             end if;
             Execute_Action (Current_Action);
@@ -648,7 +654,7 @@ package body Aforth is
 
    procedure From_R is
    begin
-      Push (Pop (Return_Stack));
+      Push (Pop (Return_Stack'Access));
    end From_R;
 
    ------------------
@@ -789,7 +795,7 @@ package body Aforth is
 
    procedure J is
    begin
-      Push (Return_Stack.Data (Return_Stack.Top - 2));
+      Push (Element (Return_Stack, Last_Index (Return_Stack) - 1));
    end J;
 
    ----------
@@ -832,15 +838,12 @@ package body Aforth is
    begin
       --  Loop for Do_Loop_Reference on the stack
 
-      for I in reverse Data_Stack.Data'First .. Data_Stack.Top loop
-         if Data_Stack.Data (I) = Do_Loop_Reference then
+      for I in reverse First_Index (Data_Stack) .. Last_Index (Data_Stack) loop
+         if Element (Data_Stack, I) = Do_Loop_Reference then
 
             --  Insert the leave information at the proper place
 
-            Data_Stack.Data (I .. Data_Stack.Top + 1) :=
-              Data_Stack.Data (I - 1 .. Data_Stack.Top);
-            Data_Stack.Top := Data_Stack.Top + 1;
-            Data_Stack.Data (I - 1) := Last_Index (Compilation_Buffer) + 1;
+            Insert (Data_Stack, I, Last_Index (Compilation_Buffer) + 1);
             Add_To_Compilation_Buffer (0);
             Add_To_Compilation_Buffer (Jump'Access);
             return;
@@ -991,7 +994,7 @@ package body Aforth is
    procedure Pick is
       How_Deep : constant Integer := Integer (Pop);
    begin
-      Push (Data_Stack.Data (Data_Stack.Top - How_Deep));
+      Push (Element (Data_Stack, Last_Index (Data_Stack) - How_Deep));
    end Pick;
 
    ----------
@@ -1039,13 +1042,15 @@ package body Aforth is
    -- Pop --
    ---------
 
-   function Pop (S : access Stack_Type) return Cell is
+   function Pop (S : not null access Stacks.Vector) return Cell is
+      Result : Cell;
    begin
-      if S.Top = 0 then
+      if S.Is_Empty then
          raise Stack_Underflow;
       end if;
-      S.Top := S.Top - 1;
-      return S.Data (S.Top + 1);
+      Result := Last_Element (S.all);
+      Delete_Last (S.all);
+      return Result;
    end Pop;
 
    ---------
@@ -1054,7 +1059,7 @@ package body Aforth is
 
    function Pop return Cell is
    begin
-      return Pop (Data_Stack);
+      return Pop (Data_Stack'Access);
    end Pop;
 
    ------------
@@ -1114,13 +1119,9 @@ package body Aforth is
    -- Push --
    ----------
 
-   procedure Push (S : access Stack_Type; X : Cell) is
+   procedure Push (S : in out Stacks.Vector; X : Cell) is
    begin
-      if S.Top = S.Data'Last then
-         raise Stack_Overflow;
-      end if;
-      S.Top          := S.Top + 1;
-      S.Data (S.Top) := X;
+      Append (S, X);
    end Push;
 
    ----------
@@ -1180,8 +1181,8 @@ package body Aforth is
    procedure Quit is
    begin
       loop
-         Data_Stack.Top := 0;
-         Return_Stack.Top := 0;
+         Clear (Data_Stack);
+         Clear (Return_Stack);
          Interpret_Mode;
          begin
             Main_Loop;
@@ -1212,7 +1213,7 @@ package body Aforth is
 
    procedure R_At is
    begin
-      Push (Return_Stack.Data (Return_Stack.Top));
+      Push (Last_Element (Return_Stack));
    end R_At;
 
    -------------
@@ -1366,13 +1367,11 @@ package body Aforth is
    ----------
 
    procedure Roll is
-      Offset : constant Integer    := Integer (Pop);
-      Index  : constant Integer    := Data_Stack.Top - Offset;
-      Moved  : constant Cell := Data_Stack.Data (Index);
+      Offset : constant Integer  := Integer (Pop);
+      Index  : constant Positive := Last_Index (Data_Stack) - Offset;
    begin
-      Data_Stack.Data (Index .. Data_Stack.Top - 1) :=
-        Data_Stack.Data (Index + 1 .. Data_Stack.Top);
-      Data_Stack.Data (Data_Stack.Top) := Moved;
+      Append (Data_Stack, Element (Data_Stack, Index));
+      Delete (Data_Stack, Index);
    end Roll;
 
    ------------
@@ -1705,9 +1704,8 @@ package body Aforth is
 
    procedure Two_R_At is
    begin
-      Push (Return_Stack.Data (Return_Stack.Top - 1));
-      Push (Return_Stack.Data (Return_Stack.Top));
-      Return_Stack.Top := Return_Stack.Top - 2;
+      Push (Element (Return_Stack, Last_Index (Return_Stack) - 1));
+      Push (Last_Element (Return_Stack));
    end Two_R_At;
 
    --------------
@@ -1759,7 +1757,8 @@ package body Aforth is
 
    procedure Unloop is
    begin
-      Return_Stack.Top := Return_Stack.Top - 2;
+      Delete_Last (Return_Stack);
+      Delete_Last (Return_Stack);
    end Unloop;
 
    ------------
@@ -1828,9 +1827,6 @@ package body Aforth is
    end Words;
 
 begin
-   Data_Stack   := new Stack_Type;
-   Return_Stack := new Stack_Type;
-
    --  Store and register HERE at position 0 -- bootstrap STATE at position 4
    pragma Warnings (Off);
    State := To_Cell_Access (Memory (4)'Access);
