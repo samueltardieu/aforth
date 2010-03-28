@@ -9,7 +9,7 @@ project Aforth is
   end Builder;
 
   package Compiler is
-    for Default_Switches ("Ada") use ("-g", "-O2", "-gnatg");
+    for Default_Switches ("Ada") use ("-g", "-O2", "-gnatg", "-gnaty");
   end Compiler;
 
 end Aforth;

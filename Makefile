@@ -25,4 +25,4 @@ clean:: never
 never::
 
 check-syntax::
-	$(GNATMAKE) -I../areadline -gnatc -c $(CHK_SOURCES)
+	gcc -I../areadline -S -o /dev/null -gnatwa -gnaty $(CHK_SOURCES)
