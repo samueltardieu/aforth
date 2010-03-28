@@ -10,16 +10,15 @@ except IndexError: ada = sys.argv[1][:-3].capitalize()
 
 adafile = ada.lower().replace('.', '-')
 
-open("%s.ads" % adafile, "w").write("""package %s is
+open("%s.ads" % adafile, "w").write("""with Forth_Interpreter;
+generic
+   with package Interpreter is new Forth_Interpreter;
+package %s is
    pragma Elaborate_Body;
 end %s;
 """ % (ada, ada))
 
 outbody = open("%s.adb" % adafile, "w")
-if not adafile.startswith('aforth-'):
-    outbody.write("""with Aforth;
-pragma Elaborate_All (Aforth);""")
-
 outbody.write("""package body %s is
 begin
 """ % ada)
@@ -41,10 +40,10 @@ def wrap(text, width):
                   text.split(' '))
 
 # Make sure we don't split lines after POSTPONE
-text = wrap(open(sys.argv[1]).read().replace('POSTPONE ', 'POSTPONE_'), 48).replace('POSTPONE_', 'POSTPONE ')
+text = wrap(open(sys.argv[1]).read().replace('POSTPONE ', 'POSTPONE_'), 40).replace('POSTPONE_', 'POSTPONE ')
 
 for l in text.splitlines():
-    outbody.write ('   Aforth.Interpret_Line ("%s");\n' % l.replace('"', '""'))
+    outbody.write ('   Interpreter.Interpret_Line ("%s");\n' % l.replace('"', '""'))
 
 outbody.write("end %s;\n" % ada)
 

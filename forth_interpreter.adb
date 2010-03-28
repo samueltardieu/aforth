@@ -1,12 +1,13 @@
 with Ada.Characters.Handling;    use Ada.Characters.Handling;
 with Ada.Containers.Vectors;
 with Ada.Exceptions;             use Ada.Exceptions;
+with Ada.Real_Time;              use Ada.Real_Time;
 with Ada.Strings.Unbounded;      use Ada.Strings.Unbounded;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with Readline;
 
-package body Aforth is
+package body Forth_Interpreter is
 
    --  Notes:
    --    - the compilation stack is the data stack
@@ -924,6 +925,15 @@ package body Aforth is
       Semicolon;
       Here.all := Here.all + Size;
    end Make_Variable;
+
+   --------
+   -- MS --
+   --------
+
+   procedure MS is
+   begin
+      delay until Clock + Milliseconds (Integer (Pop));
+   end MS;
 
    -----------
    -- Mstar --
@@ -1867,6 +1877,7 @@ begin
    Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
    Register_Ada_Word ("LSHIFT", Lshift'Access);
    Register_Ada_Word ("KEY", Key'Access);
+   Register_Ada_Word ("MS", MS'Access);
    Register_Ada_Word ("M*", Mstar'Access);
    Register_Ada_Word ("PARSE", Parse'Access);
    Register_Ada_Word ("PICK", Pick'Access);
@@ -1905,4 +1916,4 @@ begin
    Register_Ada_Word ("WORD", Word'Access);
    Register_Ada_Word ("WORDS", Words'Access);
    Readline.Variable_Bind ("completion-ignore-case", "on");
-end Aforth;
+end Forth_Interpreter;

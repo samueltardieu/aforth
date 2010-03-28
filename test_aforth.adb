@@ -3,8 +3,6 @@ with Ada.IO_Exceptions;
 with Aforth;             use Aforth;
 with Aforth.Builtins;
 pragma Warnings (Off, Aforth.Builtins);
-with Aforth.Timing;
-pragma Warnings (Off, Aforth.Timing);
 
 procedure Test_Aforth is
 begin
