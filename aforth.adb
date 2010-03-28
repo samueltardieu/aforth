@@ -29,7 +29,7 @@ package body Aforth is
    procedure Register (Name   : String;
                        Action : Action_Type);
 
-   Not_Found : exception;
+   Not_Found     : exception;
 
    function Find (Name : String) return Action_Type;
    --  May raise Not_Found
@@ -235,6 +235,15 @@ package body Aforth is
          Here.all := Here.all + (4 - (Here.all mod 4));
       end if;
    end Align;
+
+   ---------
+   -- Bye --
+   ---------
+
+   procedure Bye is
+   begin
+      raise Bye_Exception;
+   end Bye;
 
    ------------
    -- Cfetch --
@@ -1155,6 +1164,8 @@ package body Aforth is
          begin
             Main_Loop;
          exception
+            when Bye_Exception =>
+               return;
             when End_Error =>
                return;
             when NF : Not_Found =>
@@ -1811,6 +1822,7 @@ begin
    Register_Ada_Word ("AGAIN", Again'Access, Immediate => True);
    Register_Ada_Word ("AHEAD", Ahead'Access, Immediate => True);
    Register_Ada_Word ("ALIGN", Align'Access);
+   Register_Ada_Word ("BYE", Bye'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
    Register_Ada_Word ("COMPILE,", Compile_Comma'Access);
    Register_Ada_Word ("C!", Cstore'Access);

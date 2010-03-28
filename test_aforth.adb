@@ -15,4 +15,6 @@ begin
 exception
    when Ada.IO_Exceptions.Name_Error =>
       Set_Exit_Status (1);
+   when Bye_Exception =>
+      return;
 end Test_Aforth;

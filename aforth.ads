@@ -56,8 +56,11 @@ package Aforth is
      (Name  : String;
       Value : Cell);
 
+   Bye_Exception : exception;
+
    procedure Include_File (File_Name : String);
-   --  This may raise Ada.IO_Exceptions.Name_Error if the file cannot be found
+   --  This may raise Ada.IO_Exceptions.Name_Error if the file cannot be found,
+   --  or Bye_Exception if the "BYE" word is used while reading the file.
 
    procedure Interpret_Line (Line : String);
 
@@ -68,6 +71,7 @@ package Aforth is
    procedure Again;
    procedure Ahead;
    procedure Align;
+   procedure Bye;
    procedure Cfetch;
    procedure Colon;
    procedure Colon_Noname;
