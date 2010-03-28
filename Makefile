@@ -23,3 +23,6 @@ clean:: never
 	  aforth-builtins.ads aforth-builtins.adb
 
 never::
+
+check-syntax::
+	$(GNATMAKE) -I../areadline -gnatc -c $(CHK_SOURCES)
