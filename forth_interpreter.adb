@@ -5,6 +5,7 @@ with Ada.Real_Time;              use Ada.Real_Time;
 with Ada.Strings.Unbounded;      use Ada.Strings.Unbounded;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
+with Forth_Builtins;
 with Readline;
 
 package body Forth_Interpreter is
@@ -1915,5 +1916,10 @@ begin
    Register_Ada_Word ("UNUSED", Unused'Access);
    Register_Ada_Word ("WORD", Word'Access);
    Register_Ada_Word ("WORDS", Words'Access);
+
+   for I in Forth_Builtins.Builtins'Range loop
+      Interpret_Line (Forth_Builtins.Builtins (I) .all);
+   end loop;
+
    Readline.Variable_Bind ("completion-ignore-case", "on");
 end Forth_Interpreter;

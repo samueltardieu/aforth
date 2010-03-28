@@ -2,6 +2,6 @@ b~*.ad?
 *.ali
 *.o
 test_aforth
-forth_builtins.ad?
+forth_builtins.ads
 *~
 \#*\#

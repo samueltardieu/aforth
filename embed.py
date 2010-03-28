@@ -10,18 +10,16 @@ except IndexError: ada = sys.argv[1][:-3].capitalize()
 
 adafile = ada.lower().replace('.', '-')
 
-open("%s.ads" % adafile, "w").write("""with Forth_Interpreter;
-generic
-   with package Interpreter is new Forth_Interpreter;
-package %s is
-   pragma Elaborate_Body;
-end %s;
-""" % (ada, ada))
+outspec = open("%s.ads" % adafile, "w")
+outspec.write('''package %s is
 
-outbody = open("%s.adb" % adafile, "w")
-outbody.write("""package body %s is
-begin
-""" % ada)
+   pragma Preelaborate;
+
+   type String_Access is access constant String;
+   type String_Array is array (Positive range <>) of String_Access;
+
+   Builtins : constant String_Array := (
+      ''' % ada)
 
 # Snippet copied from http://code.activestate.com/recipes/148061/
 # (PSF license)
@@ -42,8 +40,10 @@ def wrap(text, width):
 # Make sure we don't split lines after POSTPONE
 text = wrap(open(sys.argv[1]).read().replace('POSTPONE ', 'POSTPONE_'), 40).replace('POSTPONE_', 'POSTPONE ')
 
-for l in text.splitlines():
-    outbody.write ('   Interpreter.Interpret_Line ("%s");\n' % l.replace('"', '""'))
+outspec.write (',\n      '.join(['''new String'("%s")''' % l.replace('"', '""') for l in text.splitlines()]))
 
-outbody.write("end %s;\n" % ada)
+outspec.write(""");
+
+end %s;
+""" % ada)
 

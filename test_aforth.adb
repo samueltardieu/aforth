@@ -1,8 +1,6 @@
 with Ada.Command_Line;   use Ada.Command_Line;
 with Ada.IO_Exceptions;
 with Aforth;             use Aforth;
-with Aforth.Builtins;
-pragma Warnings (Off, Aforth.Builtins);
 
 procedure Test_Aforth is
 begin
