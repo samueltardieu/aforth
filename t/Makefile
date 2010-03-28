@@ -1,4 +1,4 @@
 check:
-	@for f in t*.sh; do \
-	  bash ./$$f; \
+	@set -e && for f in *.fs; do \
+	  bash run-test.sh $$f; \
 	done
