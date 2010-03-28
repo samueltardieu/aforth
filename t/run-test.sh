@@ -35,7 +35,7 @@ cd $testdir
 
 echo -n "Testing $testname... "
 
-cp ../$testfile commands
+(cat ../$testfile; echo) > commands
 
 sed -ne 's/^.*\\ \(.*\)/\1/p' < commands | filter > expected
 ../../test_aforth < commands | filter > output 2> errors
