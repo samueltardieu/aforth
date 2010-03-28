@@ -123,7 +123,7 @@ package body Aforth is
    Use_RL         : Boolean := True;
    --  Should the current input method use Read_Line?
 
-   procedure Start_Definition (Name : String);
+   procedure Start_Definition (Name : String := "");
 
    function To_String return String;
 
@@ -315,7 +315,7 @@ package body Aforth is
    procedure Colon_Noname is
    begin
       Push (Last_Index (Compilation_Buffer) + 1);
-      Start_Definition ("");
+      Start_Definition;
    end Colon_Noname;
 
    -----------
@@ -409,7 +409,7 @@ package body Aforth is
 
       --  Start an unnamed word corresponding to the DOES> part
 
-      Start_Definition ("");
+      Start_Definition;
       pragma Assert (Last_Index (Compilation_Buffer) + 1 = Does_Part);
    end Does;
 
@@ -1558,7 +1558,7 @@ package body Aforth is
    -- Start_Definition --
    ----------------------
 
-   procedure Start_Definition (Name : String) is
+   procedure Start_Definition (Name : String := "") is
    begin
       if Name /= "" then
          Current_Name := To_Unbounded_String (Name);
