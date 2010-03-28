@@ -1,9 +1,9 @@
 with Ada.Characters.Handling;    use Ada.Characters.Handling;
 with Ada.Containers.Vectors;
 with Ada.Exceptions;             use Ada.Exceptions;
+with Ada.Strings.Unbounded;      use Ada.Strings.Unbounded;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
-with Ada.Unchecked_Deallocation;
 with Readline;
 
 package body Aforth is
@@ -46,10 +46,8 @@ package body Aforth is
    package Cell_IO is new Ada.Text_IO.Integer_IO (Cell);
    use Cell_IO;
 
-   type String_Access is access String;
-
    type Dictionary_Entry is record
-      Name   : String_Access;
+      Name   : Unbounded_String;
       Action : Action_Type;
    end record;
 
@@ -78,9 +76,6 @@ package body Aforth is
       new Ada.Unchecked_Conversion (Integer_64, Unsigned_64);
    function To_Integer_64 is
       new Ada.Unchecked_Conversion (Unsigned_64, Integer_64);
-
-   procedure Free is
-      new Ada.Unchecked_Deallocation (String, String_Access);
 
    package Stacks is
       new Ada.Containers.Vectors (Positive, Cell);
@@ -121,7 +116,7 @@ package body Aforth is
      (Name : String;
       Var  : out Cell);
 
-   Current_Name   : String_Access;
+   Current_Name   : Unbounded_String;
    Current_Action : Action_Type (Forth_Word);
    Current_IP     : Cell := -1;
 
@@ -531,7 +526,7 @@ package body Aforth is
          declare
             Current : Dictionary_Entry renames Element (Dict, I);
          begin
-            if To_Lower (Current.Name.all) = Lower_Name then
+            if To_Lower (To_String (Current.Name)) = Lower_Name then
                pragma Assert (Current.Action.Kind = Forth_Word);
                return Current.Action;
             end if;
@@ -1262,7 +1257,7 @@ package body Aforth is
       Action : Action_Type)
    is
    begin
-      Append (Dict, (Name   => new String'(Name),
+      Append (Dict, (Name   => To_Unbounded_String (Name),
                      Action => Action));
       Readline.Add_Word (Name);
    end Register;
@@ -1436,7 +1431,7 @@ package body Aforth is
                        Current.Action.Forth_Proc = Action.Forth_Proc
                      then
                         Found := True;
-                        Put_Line (Current.Name.all);
+                        Put_Line (To_String (Current.Name));
                         exit;
                      end if;
                   end;
@@ -1469,7 +1464,7 @@ package body Aforth is
                                   Forth_Exit
                               then
                                  Found := True;
-                                 Put_Line (Current.Name.all &
+                                 Put_Line (To_String (Current.Name) &
                                              " <Ada primitive>");
                                  exit;
                               end if;
@@ -1498,9 +1493,9 @@ package body Aforth is
       --  Current_Name can be null during definition or completion of
       --  a DOES> prefix.
 
-      if Current_Name /= null then
-         Register (Current_Name.all, Current_Action);
-         Free (Current_Name);
+      if Current_Name /= "" then
+         Register (To_String (Current_Name), Current_Action);
+         Current_Name := To_Unbounded_String ("");
       end if;
 
       Interpret_Mode;
@@ -1566,7 +1561,7 @@ package body Aforth is
    procedure Start_Definition (Name : String) is
    begin
       if Name /= "" then
-         Current_Name := new String'(Name);
+         Current_Name := To_Unbounded_String (Name);
       end if;
       Current_Action.Immediate  := False;
       Current_Action.Forth_Proc := Last_Index (Compilation_Buffer) + 1;
@@ -1804,14 +1799,14 @@ package body Aforth is
          declare
             Current : Dictionary_Entry renames Element (Dict, I);
          begin
-            Len := Len + Current.Name'Length + 1;
+            Len := Len + Length (Current.Name) + 1;
             if Len > 75 then
                New_Line;
-               Len := Current.Name'Length;
+               Len := Length (Current.Name);
             elsif I /= First_Index (Dict) then
                Put (' ');
             end if;
-            Put (Current.Name.all);
+            Put (To_String (Current.Name));
          end;
       end loop;
    end Words;
