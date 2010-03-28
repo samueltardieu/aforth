@@ -324,9 +324,7 @@ package body Aforth is
 
    procedure Comma is
    begin
-      pragma Warnings (Off);
       To_Cell_Access (Memory (Here.all) 'Access) .all := Pop;
-      pragma Warnings (On);
       Here.all := Here.all + 4;
    end Comma;
 
@@ -495,10 +493,7 @@ package body Aforth is
    -----------
 
    procedure Fetch is
-      pragma Warnings (Off);
-      Addr  : constant Cell_Access :=
-        To_Cell_Access (Memory (Pop)'Access);
-      pragma Warnings (On);
+      Addr  : constant Cell_Access := To_Cell_Access (Memory (Pop)'Access);
    begin
       Push (Addr.all);
    end Fetch;
@@ -1309,9 +1304,7 @@ package body Aforth is
    begin
       Tick (Name);
       To_Body;
-      pragma Warnings (Off);
       Var := To_Cell_Access (Memory (Pop) 'Access);
-      pragma Warnings (On);
    end Remember_Variable;
 
    -----------------------
@@ -1575,10 +1568,7 @@ package body Aforth is
 
    procedure Store
    is
-      pragma Warnings (Off);
-      Addr  : constant Cell_Access :=
-        To_Cell_Access (Memory (Pop)'Access);
-      pragma Warnings (On);
+      Addr  : constant Cell_Access := To_Cell_Access (Memory (Pop)'Access);
    begin
       Addr.all := Pop;
    end Store;
@@ -1813,9 +1803,7 @@ package body Aforth is
 
 begin
    --  Store and register HERE at position 0 -- bootstrap STATE at position 4
-   pragma Warnings (Off);
    State := To_Cell_Access (Memory (4)'Access);
-   pragma Warnings (On);
    Store (0, 4);
    Start_Definition ("HERE");
    Add_To_Compilation_Buffer (0);
