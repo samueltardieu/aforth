@@ -89,8 +89,6 @@ package body Aforth is
    function Pop (S : not null access Stacks.Vector) return Cell;
    --  May raise stack underflow
 
-   Already_Handled : exception;
-
    Here      : Cell_Access;
    Base      : Cell_Access;
    TIB       : Cell;
@@ -674,7 +672,7 @@ package body Aforth is
       exception
          when Name_Error =>
             Put_Line ("*** File not found: " & File_Name);
-            raise Already_Handled;
+            raise;
       end;
       Set_Input (File);
       Use_RL := False;
@@ -1167,7 +1165,9 @@ package body Aforth is
                Put_Line ("*** Stack underflow");
             when Compile_Only =>
                Put_Line ("*** Compile only");
-            when Already_Handled =>
+            when Name_Error =>
+               --  This exception has already been handled and is getting
+               --  reraised.
                null;
             when E : others =>
                Put_Line ("*** Exception " & Exception_Name (E) &

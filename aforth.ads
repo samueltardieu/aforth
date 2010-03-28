@@ -57,6 +57,7 @@ package Aforth is
       Value : Cell);
 
    procedure Include_File (File_Name : String);
+   --  This may raise Ada.IO_Exceptions.Name_Error if the file cannot be found
 
    procedure Interpret_Line (Line : String);
 
