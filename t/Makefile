@@ -1,4 +1,4 @@
 check:
 	@for f in t*.sh; do \
-	  ./$$f; \
+	  bash ./$$f; \
 	done

@@ -13,10 +13,13 @@ cd $testdir
 
 echo -n "Testing $testname... "
 
+filter() {
+  sed  -e 's/\xd//' -e '/^$/d' -e '/^ok>/d' -e '/^]/d'
+}
+
 run_test() {
-  echo bye >> commands
-  echo >> expected
-  ! ../../test_aforth commands | sed -e 's/\xd//' > output 2> errors
+  (cat commands; echo bye) >> commands-bye
+  ! ../../test_aforth < commands | filter > output 2> errors
   if [ $# != 0 ] ; then
     fail error
   fi
