@@ -994,6 +994,9 @@ package body Forth_Interpreter is
    procedure Pick is
       How_Deep : constant Integer := Integer (Pop);
    begin
+      if How_Deep >= Natural (Length (Data_Stack)) then
+         raise Stack_Underflow;
+      end if;
       Push (Element (Data_Stack, Last_Index (Data_Stack) - How_Deep));
    end Pick;
 
