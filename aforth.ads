@@ -70,7 +70,6 @@ package Aforth is
    procedure Cfetch;
    procedure Colon;
    procedure Colon_Noname;
-   procedure Comma;
    procedure Compile_Comma;
    procedure Compile_Mode;
    procedure Cr;

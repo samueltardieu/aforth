@@ -318,16 +318,6 @@ package body Aforth is
       Start_Definition;
    end Colon_Noname;
 
-   -----------
-   -- Comma --
-   -----------
-
-   procedure Comma is
-   begin
-      To_Cell_Access (Memory (Here.all) 'Access) .all := Pop;
-      Here.all := Here.all + 4;
-   end Comma;
-
    --------
    -- Cr --
    --------
@@ -1827,7 +1817,6 @@ begin
    Register_Ada_Word (":", Colon'Access);
    Register_Ada_Word (":NONAME", Colon_Noname'Access);
    Register_Ada_Word ("]", Compile_Mode'Access);
-   Register_Ada_Word (",", Comma'Access);
    Register_Ada_Word ("CR", Cr'Access);
    Register_Ada_Word ("/MOD", DivMod'Access);
    Register_Ada_Word ("DOES>", Does'Access, Immediate => True);
