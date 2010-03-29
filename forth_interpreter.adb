@@ -389,6 +389,94 @@ package body Forth_Interpreter is
    end Cstore;
 
    -----------
+   -- D_Abs --
+   -----------
+
+   procedure D_Abs is
+   begin
+      Push_64 (abs (Pop_64));
+   end D_Abs;
+
+   -------------
+   -- D_Equal --
+   -------------
+
+   procedure D_Equal is
+   begin
+      Push (Pop_64 = Pop_64);
+   end D_Equal;
+
+   -----------
+   -- D_Max --
+   -----------
+
+   procedure D_Max is
+   begin
+      Push_64 (Integer_64'Max (Pop_64, Pop_64));
+   end D_Max;
+
+   -----------
+   -- D_Min --
+   -----------
+
+   procedure D_Min is
+   begin
+      Push_64 (Integer_64'Min (Pop_64, Pop_64));
+   end D_Min;
+
+   -------------
+   -- D_Minus --
+   -------------
+
+   procedure D_Minus is
+      X : constant Integer_64 := Pop_64;
+   begin
+      Push_64 (Pop_64 - X);
+   end D_Minus;
+
+   ------------
+   -- D_Plus --
+   ------------
+
+   procedure D_Plus is
+   begin
+      Push_64 (Pop_64 + Pop_64);
+   end D_Plus;
+
+   ---------------
+   -- D_Smaller --
+   ---------------
+
+   procedure D_Smaller is
+      X : constant Integer_64 := Pop_64;
+   begin
+      Push (Pop_64 < X);
+   end D_Smaller;
+
+   ---------------
+   -- D_Two_Div --
+   ---------------
+
+   procedure D_Two_Div is
+      A : constant Integer_64 := Pop_64;
+      B : Unsigned_64 := To_Unsigned_64 (A) / 2;
+   begin
+      if A < 0 then
+         B := B or (2 ** 63);
+      end if;
+      Push_Unsigned_64 (B);
+   end D_Two_Div;
+
+   -----------------
+   -- D_Two_Times --
+   -----------------
+
+   procedure D_Two_Times is
+   begin
+      Push_Unsigned_64 (Pop_Unsigned_64 * 2);
+   end D_Two_Times;
+
+   -----------
    -- Depth --
    -----------
 
@@ -2100,10 +2188,19 @@ begin
    Register_Ada_Word (":NONAME", Colon_Noname'Access);
    Register_Ada_Word ("]", Compile_Mode'Access);
    Register_Ada_Word ("CR", Cr'Access);
+   Register_Ada_Word ("DABS", D_Abs'Access);
+   Register_Ada_Word ("D=", D_Equal'Access);
+   Register_Ada_Word ("DMAX", D_Max'Access);
+   Register_Ada_Word ("DMIN", D_Min'Access);
+   Register_Ada_Word ("D-", D_Minus'Access);
+   Register_Ada_Word ("D+", D_Plus'Access);
+   Register_Ada_Word ("D<", D_Smaller'Access);
+   Register_Ada_Word ("D2/", D_Two_Div'Access);
+   Register_Ada_Word ("D2*", D_Two_Times'Access);
+   Register_Ada_Word ("DEPTH", Depth'Access);
    Register_Ada_Word ("/MOD", DivMod'Access);
    Register_Ada_Word ("DOES>", Does'Access, Immediate => True);
    Register_Ada_Word ("DROP", Drop'Access);
-   Register_Ada_Word ("DEPTH", Depth'Access);
    Register_Ada_Word ("DUP", Dup'Access);
    Register_Ada_Word ("EMIT", Emit'Access);
    Register_Ada_Word ("=", Equal'Access);

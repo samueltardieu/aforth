@@ -81,6 +81,15 @@ generic package Forth_Interpreter is
    procedure Count;
    procedure Cr;
    procedure Cstore;
+   procedure D_Abs;
+   procedure D_Equal;
+   procedure D_Max;
+   procedure D_Min;
+   procedure D_Minus;
+   procedure D_Plus;
+   procedure D_Smaller;
+   procedure D_Two_Div;
+   procedure D_Two_Times;
    procedure Depth;
    procedure DivMod;
    procedure Does;
