@@ -11,13 +11,10 @@
 : 2VARIABLE ALIGN CREATE 0 , 0 , ;
 : 1+ 1 + ;
 : NEGATE -1 XOR 1+ ;
-: DUP 0 PICK ;
 : 0>= 0 >= ;
-: = XOR DUP 0>= SWAP NEGATE 0>= AND ;
 : 0= 0 = ;
 : < >= 0= ;
 : <> = 0= ;
-: 0< 0>= 0= ;
 : 0> NEGATE 0< ;
 : 0<= NEGATE 0>= ;
 : 0<> 0 <> ;

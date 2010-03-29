@@ -442,6 +442,18 @@ package body Forth_Interpreter is
       null;
    end Drop;
 
+   ---------
+   -- Dup --
+   ---------
+
+   procedure Dup is
+   begin
+      if Is_Empty (Data_Stack) then
+         raise Stack_Underflow;
+      end if;
+      Push (Last_Element (Data_Stack));
+   end Dup;
+
    ----------
    -- Emit --
    ----------
@@ -450,6 +462,15 @@ package body Forth_Interpreter is
    begin
       Put (Character'Val (Pop));
    end Emit;
+
+   -----------
+   -- Equal --
+   -----------
+
+   procedure Equal is
+   begin
+      Push (Pop = Pop);
+   end Equal;
 
    -------------
    -- Execute --
@@ -1005,6 +1026,15 @@ package body Forth_Interpreter is
    begin
       Push_64 (Integer_64 (Pop) * Integer_64 (Pop));
    end Mstar;
+
+   --------------
+   -- Negative --
+   --------------
+
+   procedure Negative is
+   begin
+      Push (Pop < 0);
+   end Negative;
 
    ----------------
    -- Next_Index --
@@ -1991,7 +2021,9 @@ begin
    Register_Ada_Word ("DROP", Drop'Access);
    Register_Ada_Word ("DEPTH", Depth'Access);
    Register_Ada_Word (".", Dot'Access);
+   Register_Ada_Word ("DUP", Dup'Access);
    Register_Ada_Word ("EMIT", Emit'Access);
+   Register_Ada_Word ("=", Equal'Access);
    Register_Ada_Word ("EXECUTE", Execute'Access);
    Register_Ada_Word ("@", Fetch'Access);
    Register_Ada_Word ("FIND", Find'Access);
@@ -2015,6 +2047,7 @@ begin
    Register_Ada_Word ("KEY", Key'Access);
    Register_Ada_Word ("MS", MS'Access);
    Register_Ada_Word ("M*", Mstar'Access);
+   Register_Ada_Word ("0<", Negative'Access);
    Register_Ada_Word ("PARSE", Parse'Access);
    Register_Ada_Word ("PICK", Pick'Access);
    Register_Ada_Word ("+", Plus'Access);

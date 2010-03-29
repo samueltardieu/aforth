@@ -84,7 +84,9 @@ generic package Forth_Interpreter is
    procedure Does;
    procedure Dot;
    procedure Drop;
+   procedure Dup;
    procedure Emit;
+   procedure Equal;
    procedure Execute;
    procedure Fetch;
    procedure Find;
@@ -109,6 +111,7 @@ generic package Forth_Interpreter is
    procedure Lshift;
    procedure MS;
    procedure Mstar;
+   procedure Negative;
    procedure Parse;
    procedure Pick;
    procedure Plus;
