@@ -301,25 +301,6 @@ package body Forth_Interpreter is
       end if;
    end Check_Control_Structure;
 
-   -------------------
-   -- Compile_Comma --
-   -------------------
-
-   procedure Compile_Comma is
-   begin
-      Add_To_Compilation_Buffer (Pop);
-      Add_To_Compilation_Buffer (Execute'Access);
-   end Compile_Comma;
-
-   ------------------
-   -- Compile_Mode --
-   ------------------
-
-   procedure Compile_Mode is
-   begin
-      State.all := 1;
-   end Compile_Mode;
-
    -----------
    -- Colon --
    -----------
@@ -338,6 +319,34 @@ package body Forth_Interpreter is
       Push (Next_Index (Compilation_Buffer));
       Start_Definition;
    end Colon_Noname;
+
+   -------------------
+   -- Compile_Comma --
+   -------------------
+
+   procedure Compile_Comma is
+   begin
+      Add_To_Compilation_Buffer (Pop);
+      Add_To_Compilation_Buffer (Execute'Access);
+   end Compile_Comma;
+
+   ------------------
+   -- Compile_Exit --
+   ------------------
+
+   procedure Compile_Exit is
+   begin
+      Add_To_Compilation_Buffer (Forth_Exit);
+   end Compile_Exit;
+
+   ------------------
+   -- Compile_Mode --
+   ------------------
+
+   procedure Compile_Mode is
+   begin
+      State.all := 1;
+   end Compile_Mode;
 
    --------
    -- Cr --
@@ -2050,6 +2059,7 @@ begin
    Register_Ada_Word ("AND", Forth_And'Access);
    Register_Ada_Word ("BEGIN", Forth_Begin'Access, Immediate => True);
    Register_Ada_Word ("DO", Forth_Do'Access, Immediate => True);
+   Register_Ada_Word ("EXIT", Compile_Exit'Access, Immediate => True);
    Register_Ada_Word ("IF", Forth_If'Access, Immediate => True);
    Register_Ada_Word ("OR", Forth_Or'Access);
    Register_Ada_Word ("THEN", Forth_Then'Access, Immediate => True);

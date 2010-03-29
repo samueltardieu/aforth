@@ -76,6 +76,7 @@ generic package Forth_Interpreter is
    procedure Colon;
    procedure Colon_Noname;
    procedure Compile_Comma;
+   procedure Compile_Exit;
    procedure Compile_Mode;
    procedure Cr;
    procedure Cstore;
