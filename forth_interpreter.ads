@@ -78,6 +78,7 @@ generic package Forth_Interpreter is
    procedure Compile_Comma;
    procedure Compile_Exit;
    procedure Compile_Mode;
+   procedure Count;
    procedure Cr;
    procedure Cstore;
    procedure Depth;

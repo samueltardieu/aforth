@@ -350,6 +350,17 @@ package body Forth_Interpreter is
       State.all := 1;
    end Compile_Mode;
 
+   -----------
+   -- Count --
+   -----------
+
+   procedure Count is
+      Start : constant Cell := Pop;
+   begin
+      Push (Start + 1);
+      Push (Cell (Memory (Start)));
+   end Count;
+
    --------
    -- Cr --
    --------
@@ -2057,6 +2068,7 @@ begin
    Register_Ada_Word ("BYE", Bye'Access);
    Register_Ada_Word ("C@", Cfetch'Access);
    Register_Ada_Word ("COMPILE,", Compile_Comma'Access);
+   Register_Ada_Word ("COUNT", Count'Access);
    Register_Ada_Word ("C!", Cstore'Access);
    Register_Ada_Word (":", Colon'Access);
    Register_Ada_Word (":NONAME", Colon_Noname'Access);
