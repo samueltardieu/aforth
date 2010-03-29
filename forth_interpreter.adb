@@ -1701,6 +1701,20 @@ package body Forth_Interpreter is
    end To_String;
 
    -------------
+   -- Two_Div --
+   -------------
+
+   procedure Two_Div is
+      A : constant Cell := Pop;
+      B : Unsigned_32   := To_Unsigned_32 (A) / 2;
+   begin
+      if A < 0 then
+         B := B or (2 ** 31);
+      end if;
+      Push_Unsigned (B);
+   end Two_Div;
+
+   -------------
    -- Two_Dup --
    -------------
 
@@ -1923,6 +1937,7 @@ begin
    Register_Ada_Word ("*", Times'Access);
    Register_Ada_Word (">BODY", To_Body'Access);
    Register_Ada_Word (">R", To_R'Access);
+   Register_Ada_Word ("2/", Two_Div'Access);
    Register_Ada_Word ("2DUP", Two_Dup'Access);
    Register_Ada_Word ("2R@", Two_R_At'Access);
    Register_Ada_Word ("2>R", Two_To_R'Access);

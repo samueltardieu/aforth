@@ -26,7 +26,6 @@
 : 2* 2 * ;
 : NIP SWAP DROP ;
 : / /MOD NIP ;
-: 2/ 2 / ;
 : - NEGATE + ;
 : 1- 1 - ;
 : 2DROP DROP DROP ;
