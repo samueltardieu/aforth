@@ -541,7 +541,7 @@ package body Forth_Interpreter is
    end Find;
 
    ------------------
-   -- Fm_slash_Mod --
+   -- Fm_Slash_Mod --
    ------------------
 
    procedure Fm_Slash_Mod is
@@ -1655,9 +1655,11 @@ package body Forth_Interpreter is
    procedure Sm_Slash_Rem is
       N : constant Integer_64 := Integer_64 (Pop);
       D : constant Integer_64 := Pop_64;
+      R : constant Integer_64 := D rem N;
    begin
-      Push (Cell (D mod N));
-      Push (Cell (D / N));
+      Push (Cell (R));
+      Push_64 ((D - R) / N);
+      Drop;
    end Sm_Slash_Rem;
 
    ----------------------
