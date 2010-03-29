@@ -770,6 +770,8 @@ package body Forth_Interpreter is
                            Reraise_Occurrence (NF);
                      end;
                      Push (I);
+                  when Compile_Only =>
+                     raise Compile_Only with W;
                end;
             else
                begin
@@ -788,6 +790,8 @@ package body Forth_Interpreter is
                            Reraise_Occurrence (NF);
                      end;
                      Add_To_Compilation_Buffer (I);
+                  when Compile_Only =>
+                     raise Compile_Only with W;
                end;
             end if;
          end;
@@ -1286,8 +1290,8 @@ package body Forth_Interpreter is
                Put_Line ("*** Stack overflow");
             when Stack_Underflow =>
                Put_Line ("*** Stack underflow");
-            when Compile_Only =>
-               Put_Line ("*** Compile only");
+            when CO : Compile_Only =>
+               Put_Line ("*** Compile only: " & Exception_Message (CO));
             when Name_Error =>
                --  This exception has already been handled and is getting
                --  reraised.
