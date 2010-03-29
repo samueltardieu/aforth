@@ -2040,7 +2040,7 @@ package body Forth_Interpreter is
       Length : Cell;
       Addr   : Cell;
    begin
-      Parse_Word;
+      Parse;
       Length := Pop;
       Addr   := Pop;
       Memory (Addr - 1) := Unsigned_8 (Length);
