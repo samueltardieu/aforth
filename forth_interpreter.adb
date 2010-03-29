@@ -871,7 +871,10 @@ package body Forth_Interpreter is
 
    procedure J is
    begin
-      Push (Element (Return_Stack, Last_Index (Return_Stack) - 1));
+      if Natural (Length (Return_Stack)) < 3 then
+         raise Stack_Underflow;
+      end if;
+      Push (Element (Return_Stack, Last_Index (Return_Stack) - 2));
    end J;
 
    ----------
