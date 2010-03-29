@@ -106,6 +106,7 @@ package body Forth_Interpreter is
                                          Inline     => False,
                                          Forth_Proc => -1);
 
+   Stack_Marker       : constant   := -1;
    Forward_Reference  : constant   := -100;
    Backward_Reference : constant   := -101;
    Do_Loop_Reference  : constant   := -102;
@@ -551,7 +552,7 @@ package body Forth_Interpreter is
 
       --  The structure of the BEGIN/WHILE/REPEAT loop on the compilation
       --  stack is:
-      --    -1
+      --    Stack_Marker
       --    addr of first WHILE to patch
       --    addr of second WHILE to patch
       --    ...
@@ -559,7 +560,7 @@ package body Forth_Interpreter is
       --    Backward_Reference
 
    begin
-      Push (-1);
+      Push (Stack_Marker);
       Push (Next_Index (Compilation_Buffer));
       Push (Backward_Reference);
    end Forth_Begin;
@@ -572,7 +573,7 @@ package body Forth_Interpreter is
 
       --  The structure of a DO/?DO - LOOP/+LOOP on the compilation stack
       --  is:
-      --    -1
+      --    Stack_Marker
       --    addr of the first ?DO/LEAVE
       --    addr of the second ?DO/LEAVE
       --    ...
@@ -581,7 +582,7 @@ package body Forth_Interpreter is
 
    begin
       Add_To_Compilation_Buffer (Two_To_R'Access);
-      Push (-1);
+      Push (Stack_Marker);
       Push (Next_Index (Compilation_Buffer));
       Push (Do_Loop_Reference);
    end Forth_Do;
@@ -1043,7 +1044,7 @@ package body Forth_Interpreter is
 
       loop
          To_Patch := Pop;
-         exit when To_Patch = -1;
+         exit when To_Patch = Stack_Marker;
          Patch_Jump (To_Patch => To_Patch,
                      Target   => Next_Index (Compilation_Buffer));
       end loop;
@@ -1372,7 +1373,7 @@ package body Forth_Interpreter is
          declare
             To_Fix : constant Cell := Pop;
          begin
-            exit when To_Fix = -1;
+            exit when To_Fix = Stack_Marker;
             Patch_Jump (To_Fix, Next_Index (Compilation_Buffer));
          end;
       end loop;
