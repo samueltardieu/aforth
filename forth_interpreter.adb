@@ -1192,7 +1192,7 @@ package body Forth_Interpreter is
    function Pop (S : not null access Stacks.Vector) return Cell is
       Result : Cell;
    begin
-      if S.Is_Empty then
+      if Is_Empty (S.all) then
          raise Stack_Underflow;
       end if;
       Result := Last_Element (S.all);
