@@ -572,11 +572,12 @@ package body Forth_Interpreter is
 
    procedure Forth_Do is
 
-      --  The structure of a DO/?DO - LOOP/+LOOP on the compilation stack
+      --  The structure of a DO - LOOP/+LOOP on the compilation stack
       --  is:
       --    Stack_Marker
-      --    addr of the first ?DO/LEAVE
-      --    addr of the second ?DO/LEAVE
+      --    addr of the first DO/LEAVE
+      --    addr of the second LEAVE
+      --    addr of the third LEAVE
       --    ...
       --    addr of the beginning of the loop
       --    Do_Loop_Reference
@@ -840,14 +841,14 @@ package body Forth_Interpreter is
 
    procedure Leave is
    begin
-      --  Loop for Do_Loop_Reference on the stack
+      --  Look for Do_Loop_Reference on the stack
 
       for I in reverse First_Index (Data_Stack) .. Last_Index (Data_Stack) loop
          if Element (Data_Stack, I) = Do_Loop_Reference then
 
             --  Insert the leave information at the proper place
 
-            Insert (Data_Stack, I, Next_Index (Compilation_Buffer));
+            Insert (Data_Stack, I - 1, Next_Index (Compilation_Buffer));
             Add_To_Compilation_Buffer (0);
             Add_To_Compilation_Buffer (Jump'Access);
             return;
