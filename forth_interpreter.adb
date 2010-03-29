@@ -33,6 +33,9 @@ package body Forth_Interpreter is
 
    Not_Found     : exception;
 
+   procedure Raise_Not_Found (Word : String);
+   pragma No_Return (Raise_Not_Found);
+
    function Find (Name : String) return Action_Type;
    --  May raise Not_Found
 
@@ -163,6 +166,8 @@ package body Forth_Interpreter is
    function Parse_Number (S : String) return Cell;
    --  Parse a number given the current base. This will raise Constraint_Error
    --  if the number cannot be parsed.
+
+   function Peek return Cell;
 
    -------------------------------
    -- Add_To_Compilation_Buffer --
@@ -577,11 +582,10 @@ package body Forth_Interpreter is
    ----------
 
    procedure Find is
-      C : constant Cell := Pop;
+      C : constant Cell := Peek;
       A : Action_Type;
    begin
-      Push (C + 1);
-      Push (Cell (Memory (C)));
+      Count;
       A := Find (To_String);
       Push (A.Forth_Proc);
       if A.Immediate then
@@ -613,7 +617,7 @@ package body Forth_Interpreter is
             end if;
          end;
       end loop;
-      raise Not_Found with Name;
+      Raise_Not_Found (Name);
    end Find;
 
    ------------------
@@ -1098,7 +1102,7 @@ package body Forth_Interpreter is
       Char : constant Unsigned_8 := Unsigned_8 (Pop);
    begin
       Push (TIB + IN_Ptr.all);
-      for I in IN_Ptr.all .. TIB_Count.all loop
+      for I in IN_Ptr.all .. TIB_Count.all - 1 loop
          if Memory (TIB + I) = Char then
             Push (I - IN_Ptr.all);
             IN_Ptr.all := I + 1;
@@ -1163,6 +1167,31 @@ package body Forth_Interpreter is
    end Parse_Number;
 
    ----------------
+   -- Parse_Word --
+   ----------------
+
+   procedure Parse_Word is
+      Origin : Cell;
+   begin
+      Skip_Blanks;
+      Origin := IN_Ptr.all;
+      Push (TIB + Origin);
+      while IN_Ptr.all < TIB_Count.all loop
+         declare
+            C : constant Character :=
+              Character'Val (Memory (TIB + IN_Ptr.all));
+         begin
+            IN_Ptr.all := IN_Ptr.all + 1;
+            if Is_Blank (C) then
+               Push (IN_Ptr.all - Origin - 1);
+               return;
+            end if;
+         end;
+      end loop;
+      Push (IN_Ptr.all - Origin);
+   end Parse_Word;
+
+   ----------------
    -- Patch_Jump --
    ----------------
 
@@ -1174,6 +1203,18 @@ package body Forth_Interpreter is
       Current.Value := Target;
       Replace_Element (Compilation_Buffer, To_Patch, Current);
    end Patch_Jump;
+
+   ----------
+   -- Peek --
+   -----------
+
+   function Peek return Cell is
+   begin
+      if Is_Empty (Data_Stack) then
+         raise Stack_Underflow;
+      end if;
+      return Last_Element (Data_Stack);
+   end Peek;
 
    ----------
    -- Pick --
@@ -1315,7 +1356,7 @@ package body Forth_Interpreter is
             Add_To_Compilation_Buffer (Parse_Number (W));
          exception
             when Constraint_Error =>
-               raise Not_Found with W;
+               Raise_Not_Found (W);
          end;
    end Postpone;
 
@@ -1423,6 +1464,15 @@ package body Forth_Interpreter is
    begin
       Push (Last_Element (Return_Stack));
    end R_At;
+
+   ---------------------
+   -- Raise_Not_Found --
+   ---------------------
+
+   procedure Raise_Not_Found (Word : String) is
+   begin
+      raise Not_Found with Word;
+   end Raise_Not_Found;
 
    -------------
    -- Recurse --
@@ -1749,17 +1799,10 @@ package body Forth_Interpreter is
 
    procedure Skip_Blanks is
    begin
-      for A in IN_Ptr.all .. TIB_Count.all - 1 loop
-         declare
-            C : constant Character := Character'Val (Cfetch (TIB + A));
-         begin
-            if not Is_Blank (C) then
-               IN_Ptr.all := A;
-               return;
-            end if;
-         end;
+      while IN_Ptr.all < TIB_Count.all loop
+         exit when not Is_Blank (Character'Val (Memory (TIB + IN_Ptr.all)));
+         IN_Ptr.all := IN_Ptr.all + 1;
       end loop;
-      IN_Ptr.all := TIB_Count.all;
    end Skip_Blanks;
 
    ------------------
@@ -1994,22 +2037,14 @@ package body Forth_Interpreter is
    ----------
 
    procedure Word is
+      Length : Cell;
+      Addr   : Cell;
    begin
-      Skip_Blanks;
-      Push (TIB + IN_Ptr.all);
-      for A in IN_Ptr.all .. TIB_Count.all - 1 loop
-         declare
-            C : constant Character := Character'Val (Cfetch (TIB + A));
-         begin
-            if Is_Blank (C) then
-               Push (A - IN_Ptr.all);
-               IN_Ptr.all := A + 1;
-               return;
-            end if;
-         end;
-      end loop;
-      Push (TIB_Count.all - IN_Ptr.all);
-      IN_Ptr.all := TIB_Count.all;
+      Parse_Word;
+      Length := Pop;
+      Addr   := Pop;
+      Memory (Addr - 1) := Unsigned_8 (Length);
+      Push (Addr - 1);
    end Word;
 
    ----------
@@ -2018,7 +2053,7 @@ package body Forth_Interpreter is
 
    function Word return String is
    begin
-      Word;
+      Parse_Word;
       return To_String;
    end Word;
 
@@ -2109,6 +2144,7 @@ begin
    Register_Ada_Word ("M*", Mstar'Access);
    Register_Ada_Word ("0<", Negative'Access);
    Register_Ada_Word ("PARSE", Parse'Access);
+   Register_Ada_Word ("PARSE-WORD", Parse_Word'Access);
    Register_Ada_Word ("PICK", Pick'Access);
    Register_Ada_Word ("+", Plus'Access);
    Register_Ada_Word ("+LOOP", Plus_Loop'Access, Immediate => True);

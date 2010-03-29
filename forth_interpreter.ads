@@ -116,6 +116,7 @@ generic package Forth_Interpreter is
    procedure Mstar;
    procedure Negative;
    procedure Parse;
+   procedure Parse_Word;
    procedure Pick;
    procedure Plus;
    procedure Plus_Loop;
