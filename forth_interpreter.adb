@@ -523,6 +523,29 @@ package body Forth_Interpreter is
    -- Find --
    ----------
 
+   procedure Find is
+      C : constant Cell := Pop;
+      A : Action_Type;
+   begin
+      Push (C + 1);
+      Push (Cell (Memory (C)));
+      A := Find (To_String);
+      Push (A.Forth_Proc);
+      if A.Immediate then
+         Push (1);
+      else
+         Push (-1);
+      end if;
+   exception
+      when Not_Found =>
+         Push (C);
+         Push (0);
+   end Find;
+
+   ----------
+   -- Find --
+   ----------
+
    function Find (Name : String) return Action_Type
    is
       Lower_Name : constant String := To_Lower (Name);
@@ -1970,6 +1993,7 @@ begin
    Register_Ada_Word ("EMIT", Emit'Access);
    Register_Ada_Word ("EXECUTE", Execute'Access);
    Register_Ada_Word ("@", Fetch'Access);
+   Register_Ada_Word ("FIND", Find'Access);
    Register_Ada_Word ("FM/MOD", Fm_Slash_Mod'Access);
    Register_Ada_Word ("AND", Forth_And'Access);
    Register_Ada_Word ("BEGIN", Forth_Begin'Access, Immediate => True);
