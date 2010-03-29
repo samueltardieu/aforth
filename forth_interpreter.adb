@@ -1838,11 +1838,12 @@ package body Forth_Interpreter is
    ------------------
 
    procedure Um_Slash_Mod is
-      N : constant Unsigned_32 := Pop_Unsigned;
-      D : constant Unsigned_32 := Pop_Unsigned;
+      N : constant Unsigned_64 := Unsigned_64 (Pop_Unsigned);
+      D : constant Unsigned_64 := Pop_Unsigned_64;
    begin
-      Push_Unsigned (D mod N);
-      Push_Unsigned (D / N);
+      Push_Unsigned (Unsigned_32 (D mod N));
+      Push_Unsigned_64 (D / N);
+      Drop;
    end Um_Slash_Mod;
 
    -------------
