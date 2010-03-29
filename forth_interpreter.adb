@@ -1489,12 +1489,11 @@ package body Forth_Interpreter is
    --------------
 
    procedure ScaleMod is
-      C : constant Integer_64 := Integer_64 (Pop);
-      B : constant Integer_64 := Integer_64 (Pop);
-      A : constant Integer_64 := Integer_64 (Pop);
    begin
-      Push (Cell ((A * B) mod C));
-      Push (Cell (A * B / C));
+      To_R;
+      Mstar;
+      From_R;
+      Sm_Slash_Rem;
    end ScaleMod;
 
    ---------
