@@ -12,10 +12,10 @@ install:: $(PROGRAMS)
 %.ads %.adb: %.fs
 	$(PYTHON) embed.py $<
 
-forth_builtins.ads forth_builtins.adb: builtins.fs embed.py
+forth_builtins.ads: builtins.fs embed.py
 	$(PYTHON) embed.py $< Forth_Builtins
 
-test_aforth: never forth_builtins.ads forth_builtins.adb
+test_aforth: never forth_builtins.ads
 	$(GNATMAKE) $(GNATCFLAGS) -Paforth
 
 clean:: never
@@ -28,5 +28,5 @@ check-syntax::
 	gcc -I../areadline -S -o /dev/null -gnatwa -gnaty $(CHK_SOURCES) 2>&1 | \
 	grep -v 'file name does not match unit name' >&2 || true
 
-check:
+check: all
 	@$(MAKE) -C t check
