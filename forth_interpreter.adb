@@ -158,6 +158,10 @@ package body Forth_Interpreter is
 
    function Is_Blank (C : Character) return Boolean;
 
+   function Parse_Number (S : String) return Cell;
+   --  Parse a number given the current base. This will raise Constraint_Error
+   --  if the number cannot be parsed.
+
    -------------------------------
    -- Add_To_Compilation_Buffer --
    -------------------------------
@@ -745,7 +749,7 @@ package body Forth_Interpreter is
                exception
                   when NF : Not_Found =>
                      begin
-                        I := Cell'Value (W);
+                        I := Parse_Number (W);
                      exception
                         when Constraint_Error =>
                            Reraise_Occurrence (NF);
@@ -763,7 +767,7 @@ package body Forth_Interpreter is
                exception
                   when NF : Not_Found =>
                      begin
-                        I := Cell'Value (W);
+                        I := Parse_Number (W);
                      exception
                         when Constraint_Error =>
                            Reraise_Occurrence (NF);
@@ -988,6 +992,59 @@ package body Forth_Interpreter is
       IN_Ptr.all := TIB_Count.all;
    end Parse;
 
+   ------------------
+   -- Parse_Number --
+   ------------------
+
+   function Parse_Number (S : String) return Cell
+   is
+      B           : constant Unsigned_32 := Unsigned_32 (Base.all);
+      Negative    : Boolean := False;
+      Sign_Parsed : Boolean := False;
+      Result      : Unsigned_32 := 0;
+   begin
+      for I in S'Range loop
+         declare
+            C : Character renames S (I);
+         begin
+            if C = '+' then
+               if Sign_Parsed then
+                  raise Constraint_Error;
+               end if;
+            elsif C = '-' then
+               if Sign_Parsed then
+                  raise Constraint_Error;
+               end if;
+               Negative := not Negative;
+            else
+               declare
+                  Digit : Unsigned_32;
+               begin
+                  Sign_Parsed := True;
+                  if C >= '0' and C <= '9' then
+                     Digit := Character'Pos (C) - Character'Pos ('0');
+                  elsif C >= 'A' and C <= 'Z' then
+                     Digit := 10 + Character'Pos (C) - Character'Pos ('A');
+                  elsif C >= 'a' and C <= 'z' then
+                     Digit := 10 + Character'Pos (C) - Character'Pos ('a');
+                  else
+                     raise Constraint_Error;
+                  end if;
+                  if Digit >= B then
+                     raise Constraint_Error;
+                  end if;
+                  Result := Result * B + Digit;
+               end;
+            end if;
+         end;
+      end loop;
+      if Negative then
+         return -To_Cell (Result);
+      else
+         return To_Cell (Result);
+      end if;
+   end Parse_Number;
+
    ----------------
    -- Patch_Jump --
    ----------------
@@ -1125,7 +1182,7 @@ package body Forth_Interpreter is
    exception
       when Not_Found =>
          begin
-            Add_To_Compilation_Buffer (Cell'Value (W));
+            Add_To_Compilation_Buffer (Parse_Number (W));
          exception
             when Constraint_Error =>
                raise Not_Found with W;
