@@ -87,6 +87,7 @@ generic package Forth_Interpreter is
    procedure Emit;
    procedure Execute;
    procedure Fetch;
+   procedure Fm_Slash_Mod;
    procedure Forth_And;
    procedure Forth_Begin;
    procedure Forth_Do;

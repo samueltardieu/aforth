@@ -540,6 +540,21 @@ package body Forth_Interpreter is
       raise Not_Found with Name;
    end Find;
 
+   ------------------
+   -- Fm_slash_Mod --
+   ------------------
+
+   procedure Fm_Slash_Mod is
+      Divisor   : constant Integer_64 := Integer_64 (Pop);
+      Dividend  : constant Integer_64 := Pop_64;
+      Remainder : constant Integer_64 := Dividend mod Divisor;
+      Quotient  : constant Integer_64 := (Dividend - Remainder) / Divisor;
+   begin
+      Push (Cell (Remainder));
+      Push_64 (Quotient);
+      Drop;
+   end Fm_Slash_Mod;
+
    ---------------
    -- Forth_And --
    ---------------
@@ -1949,6 +1964,7 @@ begin
    Register_Ada_Word ("EMIT", Emit'Access);
    Register_Ada_Word ("EXECUTE", Execute'Access);
    Register_Ada_Word ("@", Fetch'Access);
+   Register_Ada_Word ("FM/MOD", Fm_Slash_Mod'Access);
    Register_Ada_Word ("AND", Forth_And'Access);
    Register_Ada_Word ("BEGIN", Forth_Begin'Access, Immediate => True);
    Register_Ada_Word ("DO", Forth_Do'Access, Immediate => True);
