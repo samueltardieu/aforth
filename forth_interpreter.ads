@@ -88,6 +88,7 @@ generic package Forth_Interpreter is
    procedure Dup;
    procedure Emit;
    procedure Equal;
+   procedure Evaluate;
    procedure Execute;
    procedure Fetch;
    procedure Find;

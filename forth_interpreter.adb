@@ -101,6 +101,8 @@ package body Forth_Interpreter is
    IN_Ptr    : Cell_Access;
    State     : Cell_Access;
 
+   TIB_Length : constant := 1024;
+
    Forth_Exit : constant Action_Type := (Kind       => Forth_Word,
                                          Immediate  => True,
                                          Inline     => False,
@@ -481,6 +483,15 @@ package body Forth_Interpreter is
       Push (Pop = Pop);
    end Equal;
 
+   --------------
+   -- Evaluate --
+   --------------
+
+   procedure Evaluate is
+   begin
+      Interpret_Line (To_String);
+   end Evaluate;
+
    -------------
    -- Execute --
    -------------
@@ -860,9 +871,16 @@ package body Forth_Interpreter is
    --------------------
 
    procedure Interpret_Line (Line : String) is
+      Saved_Count   : constant Cell := TIB_Count.all;
+      Saved_Content : constant Byte_Array (1 .. TIB_Length) :=
+        Memory (TIB .. TIB + TIB_Length - 1);
+      Saved_Ptr     : constant Cell := IN_Ptr.all;
    begin
       Refill_Line (Line);
       Interpret;
+      Memory (TIB .. TIB + TIB_Length - 1) := Saved_Content;
+      TIB_Count.all := Saved_Count;
+      IN_Ptr.all := Saved_Ptr;
    end Interpret_Line;
 
    --------------------
@@ -1419,7 +1437,7 @@ package body Forth_Interpreter is
          end if;
       else
          declare
-            Buffer : String (1 .. 1024);
+            Buffer : String (1 .. TIB_Length);
             Last   : Natural;
          begin
             Get_Line (Buffer, Last);
@@ -1433,9 +1451,9 @@ package body Forth_Interpreter is
    -----------------
 
    procedure Refill_Line (Buffer : String) is
-      Last : constant Natural := Natural'Min (Buffer'Length, 1024);
+      Last : constant Natural := Natural'Min (Buffer'Length, TIB_Length);
    begin
-      for I in 1 .. Integer'Min (Buffer'Length, 1024) loop
+      for I in 1 .. Integer'Min (Buffer'Length, TIB_Length) loop
          Memory (TIB + Cell (I) - 1) := Character'Pos (Buffer (I));
       end loop;
       TIB_Count.all := Cell (Last);
@@ -2052,6 +2070,7 @@ begin
    Register_Ada_Word ("DUP", Dup'Access);
    Register_Ada_Word ("EMIT", Emit'Access);
    Register_Ada_Word ("=", Equal'Access);
+   Register_Ada_Word ("EVALUATE", Evaluate'Access);
    Register_Ada_Word ("EXECUTE", Execute'Access);
    Register_Ada_Word ("@", Fetch'Access);
    Register_Ada_Word ("FIND", Find'Access);
