@@ -290,6 +290,7 @@ package body Forth_Interpreter is
 
    procedure Check_Control_Structure (Reference : Cell) is
    begin
+      Check_Compile_Only;
       if Pop /= Reference then
          raise Unbalanced_Control_Structure;
       end if;
