@@ -1938,10 +1938,10 @@ begin
    --  Store and register HERE at position 0 -- bootstrap STATE at position 4
    State := To_Cell_Access (Memory (4)'Access);
    Store (0, 4);
-   Start_Definition ("HERE");
+   Start_Definition ("(HERE)");
    Add_To_Compilation_Buffer (0);
    Semicolon;
-   Remember_Variable ("HERE", Here);
+   Remember_Variable ("(HERE)", Here);
    Make_And_Remember_Variable ("STATE", State);
 
    --  Default existing variables
