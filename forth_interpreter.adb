@@ -645,6 +645,9 @@ package body Forth_Interpreter is
       --    ...
       --    addr of the beginning of the loop
       --    Do_Loop_Reference
+      --  At run-time, on the return stack, we have:
+      --    Loop_Limit
+      --    Loop_Index
 
    begin
       Add_To_Compilation_Buffer (Two_To_R'Access);
@@ -1162,6 +1165,18 @@ package body Forth_Interpreter is
    begin
       Check_Control_Structure (Do_Loop_Reference);
 
+      --  The standard says: "Add n to the loop index. If the loop
+      --  index did not cross the boundary between the loop limit
+      --  minus one and the loop limit, continue execution at the
+      --  beginning of the loop. Otherwise, discard the current loop
+      --  control parameters and continue execution immediately
+      --  following the loop."
+      --
+      --  In Forth, that is:
+      --    dup >r + >r 2dup >r >r >= swap 0< xor
+      --    not if [beginning] then unloop
+
+      Add_To_Compilation_Buffer (Dup'Access);
       Add_To_Compilation_Buffer (From_R'Access);
       Add_To_Compilation_Buffer (Plus'Access);
       Add_To_Compilation_Buffer (From_R'Access);
@@ -1169,8 +1184,12 @@ package body Forth_Interpreter is
       Add_To_Compilation_Buffer (To_R'Access);
       Add_To_Compilation_Buffer (To_R'Access);
       Add_To_Compilation_Buffer (Greaterequal'Access);
+      Add_To_Compilation_Buffer (Swap'Access);
+      Add_To_Compilation_Buffer (Negative'Access);
+      Add_To_Compilation_Buffer (Forth_Xor'Access);
       Add_To_Compilation_Buffer (Pop);
       Add_To_Compilation_Buffer (Jump_If_False'Access);
+      Add_To_Compilation_Buffer (Unloop'Access);
 
       --  Resolve forward references
 
@@ -1180,9 +1199,6 @@ package body Forth_Interpreter is
          Patch_Jump (To_Patch => To_Patch,
                      Target   => Next_Index (Compilation_Buffer));
       end loop;
-
-      Add_To_Compilation_Buffer (Unloop'Access);
-
    end Plus_Loop;
 
    ---------
