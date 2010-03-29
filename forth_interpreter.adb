@@ -155,6 +155,8 @@ package body Forth_Interpreter is
 
    procedure Check_Control_Structure (Reference : Cell);
 
+   function Is_Blank (C : Character) return Boolean;
+
    -------------------------------
    -- Add_To_Compilation_Buffer --
    -------------------------------
@@ -707,6 +709,15 @@ package body Forth_Interpreter is
             raise;
       end;
    end Include_File;
+
+   --------------
+   -- Is_Blank --
+   --------------
+
+   function Is_Blank (C : Character) return Boolean is
+   begin
+      return C <= ' ';
+   end Is_Blank;
 
    ---------------
    -- Interpret --
@@ -1553,7 +1564,7 @@ package body Forth_Interpreter is
          declare
             C : constant Character := Character'Val (Cfetch (TIB + A));
          begin
-            if C /= Character'Val (32) and then C /= Character'Val (9) then
+            if not Is_Blank (C) then
                IN_Ptr.all := A;
                return;
             end if;
@@ -1784,7 +1795,7 @@ package body Forth_Interpreter is
          declare
             C : constant Character := Character'Val (Cfetch (TIB + A));
          begin
-            if C = Character'Val (32) or else C = Character'Val (9) then
+            if Is_Blank (C) then
                Push (A - IN_Ptr.all);
                IN_Ptr.all := A + 1;
                return;
