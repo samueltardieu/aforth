@@ -216,9 +216,10 @@ package body Forth_Interpreter is
 
    procedure Again is
    begin
+      Check_Control_Structure (Backward_Reference);
       Literal;
       Add_To_Compilation_Buffer (Jump'Access);
-      Drop;
+      Check_Control_Structure (Stack_Marker);
    end Again;
 
    -----------
