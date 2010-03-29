@@ -1400,7 +1400,7 @@ package body Forth_Interpreter is
    procedure Rshift is
       U : constant Natural := Natural (Pop_Unsigned);
    begin
-      Push (Pop / 2 ** U);
+      Push_Unsigned (Pop_Unsigned / 2 ** U);
    end Rshift;
 
    ------------
