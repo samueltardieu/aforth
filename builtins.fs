@@ -1,4 +1,4 @@
-: \ TIB# @ >IN ! ;
+: \ TIB# @ >IN ! ; IMMEDIATE
 : CELL 4 ; INLINE
 : OVER 1 PICK ;
 : TUCK SWAP OVER ;
