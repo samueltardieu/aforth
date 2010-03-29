@@ -449,15 +449,6 @@ package body Forth_Interpreter is
       pragma Assert (Next_Index (Compilation_Buffer) = Does_Part);
    end Does;
 
-   ---------
-   -- Dot --
-   ---------
-
-   procedure Dot is
-   begin
-      Put (Pop, Base => Integer (Base.all), Width => 0);
-   end Dot;
-
    ----------
    -- Drop --
    ----------
@@ -2113,7 +2104,6 @@ begin
    Register_Ada_Word ("DOES>", Does'Access, Immediate => True);
    Register_Ada_Word ("DROP", Drop'Access);
    Register_Ada_Word ("DEPTH", Depth'Access);
-   Register_Ada_Word (".", Dot'Access);
    Register_Ada_Word ("DUP", Dup'Access);
    Register_Ada_Word ("EMIT", Emit'Access);
    Register_Ada_Word ("=", Equal'Access);

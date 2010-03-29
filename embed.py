@@ -37,8 +37,15 @@ def wrap(text, width):
                    word),
                   text.split(' '))
 
+# Protect and unprotect some words that must not be separated
+def protect(text):
+    return text.replace('POSTPONE ', 'POSTPONE_').replace('] ', ']_')
+
+def unprotect(text):
+    return text.replace('POSTPONE_', 'POSTPONE ').replace(']_', '] ')
+
 # Make sure we don't split lines after POSTPONE
-text = wrap(open(sys.argv[1]).read().replace('POSTPONE ', 'POSTPONE_'), 40).replace('POSTPONE_', 'POSTPONE ')
+text = unprotect(wrap(protect(open(sys.argv[1]).read()), 40))
 
 outspec.write (',\n      '.join(['''new String'("%s")''' % l.replace('"', '""') for l in text.splitlines()]))
 
