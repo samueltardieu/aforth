@@ -39,8 +39,10 @@ package body Forth.Interpreter is
    package Cell_IO is new Ada.Text_IO.Integer_IO (Cell);
    use Cell_IO;
 
+   pragma Warnings (Off);
    function To_Cell_Access is
       new Ada.Unchecked_Conversion (Byte_Access, Cell_Access);
+   pragma Warnings (On);
 
    function To_Unsigned_32 is
       new Ada.Unchecked_Conversion (Cell, Unsigned_32);
@@ -574,8 +576,10 @@ package body Forth.Interpreter is
    -----------
 
    procedure Fetch (I : IT) is
+      pragma Warnings (Off);
       Addr  : constant Cell_Access :=
         To_Cell_Access (I.Memory (Pop (I))'Access);
+      pragma Warnings (On);
    begin
       Push (I, Addr.all);
    end Fetch;
@@ -836,8 +840,10 @@ package body Forth.Interpreter is
 
    procedure Initialize (I : IT) is
    begin
-   --  Store and register HERE at position 0 -- bootstrap STATE at position 4
+      --  Store and register HERE at position 0 -- bootstrap STATE at position 4
+      pragma Warnings (Off);
       I.State := To_Cell_Access (I.Memory (4)'Access);
+      pragma Warnings (On);
       Store (I, 0, 4);
       Start_Definition (I, "(HERE)");
       Add_To_Compilation_Buffer (I, 0);
@@ -1700,7 +1706,9 @@ package body Forth.Interpreter is
    begin
       Tick (I, Name);
       To_Body (I);
+      pragma Warnings (Off);
       Var := To_Cell_Access (I.Memory (Pop (I)) 'Access);
+      pragma Warnings (On);
    end Remember_Variable;
 
    -----------------------
@@ -1962,8 +1970,10 @@ package body Forth.Interpreter is
 
    procedure Store (I : IT)
    is
+      pragma Warnings (Off);
       Addr  : constant Cell_Access :=
         To_Cell_Access (I.Memory (Pop (I))'Access);
+      pragma Warnings (On);
    begin
       Addr.all := Pop (I);
    end Store;
