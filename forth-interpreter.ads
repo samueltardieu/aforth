@@ -4,159 +4,168 @@ with Forth.Stacks;
 with Forth.Types;            use Forth.Types;
 with Interfaces;             use Interfaces;
 
-generic package Forth.Interpreter is
+package Forth.Interpreter is
 
    pragma Elaborate_Body;
 
-   type Cell_Access is access all Cell;
-   type Ada_Word_Access is access procedure;
-   --  Those two types have to be declared inside the generic package
-
    type Interpreter_Type is private;
 
-   procedure Push (X : Cell);
-   procedure Push_Unsigned (X : Unsigned_32);
-   procedure Push_Unsigned_64 (X : Unsigned_64);
-   procedure Push_64 (X : Integer_64);
-   procedure Push (B : Boolean);
-   function Pop return Cell;
-   function Pop_Unsigned return Unsigned_32;
-   function Pop_64 return Integer_64;
-   function Pop_Unsigned_64 return Unsigned_64;
+   subtype IT is Interpreter_Type;
+   --  Shortcut
+
+   type Cell_Access is access all Cell;
+   pragma No_Strict_Aliasing (Cell_Access);
+
+   type Ada_Word_Access is access procedure (I : IT);
+
+   function New_Interpreter return IT;
+
+   procedure Push (I : IT; X : Cell);
+   procedure Push_Unsigned (I : IT; X : Unsigned_32);
+   procedure Push_Unsigned_64 (I : IT; X : Unsigned_64);
+   procedure Push_64 (I : IT; X : Integer_64);
+   procedure Push (I : IT; B : Boolean);
+   function Pop (I : IT) return Cell;
+   function Pop_Unsigned (I : IT) return Unsigned_32;
+   function Pop_64 (I : IT) return Integer_64;
+   function Pop_Unsigned_64 (I : IT) return Unsigned_64;
    --  Shortcut operating on Data_Stack
 
    procedure Make_And_Remember_Variable
-     (Name          : String;
+     (I             : IT;
+      Name          : String;
       Var           : out Cell_Access;
       Size          : Cell := 4;
       Initial_Value : Cell := 0);
 
    procedure Make_And_Remember_Variable
-     (Name          : String;
+     (I             : IT;
+      Name          : String;
       Var           : out Cell;
       Size          : Cell := 4;
       Initial_Value : Cell := 0);
 
-   function Fetch (Addr : Cell) return Cell;
-   function Cfetch (Addr : Cell) return Cell;
-   procedure Store (Addr : Cell; Value : Cell);
+   function Fetch (I : IT; Addr : Cell) return Cell;
+   function Cfetch (I : IT; Addr : Cell) return Cell;
+   procedure Store (I : IT; Addr : Cell; Value : Cell);
 
    procedure Make_Variable
-     (Name          : String;
+     (I             : IT;
+      Name          : String;
       Size          : Cell := 4;
       Initial_Value : Cell := 0);
 
    procedure Register_Ada_Word
-     (Name      : String;
+     (I         : IT;
+      Name      : String;
       Word      : Ada_Word_Access;
       Immediate : Boolean := False);
 
    procedure Register_Constant
-     (Name  : String;
+     (I     : IT;
+      Name  : String;
       Value : Cell);
 
-   Bye_Exception : exception;
-
-   procedure Include_File (File_Name : String);
+   procedure Include_File (I : IT; File_Name : String);
    --  This may raise Ada.IO_Exceptions.Name_Error if the file cannot be found,
    --  or Bye_Exception if the "BYE" word is used while reading the file.
 
-   procedure Interpret_Line (Line : String);
+   procedure Interpret_Line (I : IT; Line : String);
 
    --  Predefined Ada words
-   procedure Again;
-   procedure Ahead;
-   procedure Align;
-   procedure Bye;
-   procedure Cfetch;
-   procedure Colon;
-   procedure Colon_Noname;
-   procedure Compile_Comma;
-   procedure Compile_Exit;
-   procedure Compile_Mode;
-   procedure Count;
-   procedure Cr;
-   procedure Cstore;
-   procedure D_Abs;
-   procedure D_Equal;
-   procedure D_Max;
-   procedure D_Min;
-   procedure D_Minus;
-   procedure D_Plus;
-   procedure D_Smaller;
-   procedure D_Two_Div;
-   procedure D_Two_Times;
-   procedure Depth;
-   procedure DivMod;
-   procedure Does;
-   procedure Drop;
-   procedure Dup;
-   procedure Emit;
-   procedure Equal;
-   procedure Evaluate;
-   procedure Execute;
-   procedure Fetch;
-   procedure Find;
-   procedure Fm_Slash_Mod;
-   procedure Forth_And;
-   procedure Forth_Begin;
-   procedure Forth_Do;
-   procedure Forth_If;
-   procedure Forth_Or;
-   procedure Forth_Then;
-   procedure Forth_While;
-   procedure Forth_Xor;
-   procedure From_R;
-   procedure Greaterequal;
-   procedure Include;
-   procedure Interpret;
-   procedure Interpret_Mode;
-   procedure J;
-   procedure Key;
-   procedure Leave;
-   procedure Literal;
-   procedure Lshift;
-   procedure MS;
-   procedure Mstar;
-   procedure Negative;
-   procedure Parse;
-   procedure Parse_Word;
-   procedure Pick;
-   procedure Plus;
-   procedure Plus_Loop;
-   procedure Postpone;
-   procedure Quit;
-   procedure R_At;
-   procedure Recurse;
-   procedure Refill;
-   procedure Repeat;
-   procedure Roll;
-   procedure Rshift;
-   procedure S_To_D;
-   procedure ScaleMod;
-   procedure See;
-   procedure Semicolon;
-   procedure Set_Immediate;
-   procedure Set_Inline;
-   procedure Skip_Blanks;
-   procedure Sm_Slash_Rem;
-   procedure Store;
-   procedure Swap;
-   procedure Tick;
-   procedure Times;
-   procedure To_Body;
-   procedure To_R;
-   procedure Two_Div;
-   procedure Two_Dup;
-   procedure Two_R_At;
-   procedure Two_To_R;
-   procedure U_Smaller;
-   procedure Um_Slash_Mod;
-   procedure Um_Star;
-   procedure Unloop;
-   procedure Unused;
-   procedure Word;
-   procedure Words;
+   procedure Again (I : IT);
+   procedure Ahead (I : IT);
+   procedure Align (I : IT);
+   procedure Bye (I : IT);
+   procedure Cfetch (I : IT);
+   procedure Colon (I : IT);
+   procedure Colon_Noname (I : IT);
+   procedure Compile_Comma (I : IT);
+   procedure Compile_Exit (I : IT);
+   procedure Compile_Mode (I : IT);
+   procedure Count (I : IT);
+   procedure Cr (I : IT);
+   procedure Cstore (I : IT);
+   procedure D_Abs (I : IT);
+   procedure D_Equal (I : IT);
+   procedure D_Max (I : IT);
+   procedure D_Min (I : IT);
+   procedure D_Minus (I : IT);
+   procedure D_Plus (I : IT);
+   procedure D_Smaller (I : IT);
+   procedure D_Two_Div (I : IT);
+   procedure D_Two_Times (I : IT);
+   procedure Depth (I : IT);
+   procedure DivMod (I : IT);
+   procedure Does (I : IT);
+   procedure Drop (I : IT);
+   procedure Dup (I : IT);
+   procedure Emit (I : IT);
+   procedure Equal (I : IT);
+   procedure Evaluate (I : IT);
+   procedure Execute (I : IT);
+   procedure Fetch (I : IT);
+   procedure Find (I : IT);
+   procedure Fm_Slash_Mod (I : IT);
+   procedure Forth_And (I : IT);
+   procedure Forth_Begin (I : IT);
+   procedure Forth_Do (I : IT);
+   procedure Forth_If (I : IT);
+   procedure Forth_Or (I : IT);
+   procedure Forth_Then (I : IT);
+   procedure Forth_While (I : IT);
+   procedure Forth_Xor (I : IT);
+   procedure From_R (I : IT);
+   procedure Greaterequal (I : IT);
+   procedure Include (I : IT);
+   procedure Interpret (I : IT);
+   procedure Interpret_Mode (I : IT);
+   procedure J (I : IT);
+   procedure Key (I : IT);
+   procedure Leave (I : IT);
+   procedure Literal (I : IT);
+   procedure Lshift (I : IT);
+   procedure MS (I : IT);
+   procedure Mstar (I : IT);
+   procedure Negative (I : IT);
+   procedure Parse (I : IT);
+   procedure Parse_Word (I : IT);
+   procedure Pick (I : IT);
+   procedure Plus (I : IT);
+   procedure Plus_Loop (I : IT);
+   procedure Postpone (I : IT);
+   procedure Quit (I : IT);
+   procedure R_At (I : IT);
+   procedure Recurse (I : IT);
+   procedure Refill (I : IT);
+   procedure Repeat (I : IT);
+   procedure Roll (I : IT);
+   procedure Rshift (I : IT);
+   procedure S_To_D (I : IT);
+   procedure ScaleMod (I : IT);
+   procedure See (I : IT);
+   procedure Semicolon (I : IT);
+   procedure Set_Immediate (I : IT);
+   procedure Set_Inline (I : IT);
+   procedure Skip_Blanks (I : IT);
+   procedure Sm_Slash_Rem (I : IT);
+   procedure Store (I : IT);
+   procedure Swap (I : IT);
+   procedure Tick (I : IT);
+   procedure Times (I : IT);
+   procedure To_Body (I : IT);
+   procedure To_R (I : IT);
+   procedure Two_Div (I : IT);
+   procedure Two_Dup (I : IT);
+   procedure Two_R_At (I : IT);
+   procedure Two_To_R (I : IT);
+   procedure U_Smaller (I : IT);
+   procedure Um_Slash_Mod (I : IT);
+   procedure Um_Star (I : IT);
+   procedure Unloop (I : IT);
+   procedure Unused (I : IT);
+   procedure Word (I : IT);
+   procedure Words (I : IT);
 
 private
 
@@ -180,9 +189,6 @@ private
    subtype Natural_Cell is Cell range 1 .. Cell'Last;
    package Compilation_Buffers is
       new Ada.Containers.Vectors (Natural_Cell, Action_Type);
-   use Compilation_Buffers;
-
-   Compilation_Buffer : Compilation_Buffers.Vector;
 
    type Dictionary_Entry is record
       Name   : Unbounded_String;
@@ -191,45 +197,12 @@ private
 
    package Dictionaries is
      new Ada.Containers.Vectors (Positive, Dictionary_Entry);
-   use Dictionaries;
-
-   Dict : Dictionaries.Vector;
 
    type Byte_Array is array (Cell range <>) of aliased Unsigned_8;
 
-   Memory : Byte_Array (0 .. 65535) := (others => 0);
-
    type Byte_Access is access all Unsigned_8;
 
-   package Stacks is
-      new Ada.Containers.Vectors (Positive, Cell);
-   use Stacks;
-   Data_Stack   : constant Stack_Type := New_Stack;
-   Return_Stack : constant Stack_Type := New_Stack;
-
-   Here      : Cell_Access;
-   Base      : Cell_Access;
-   TIB       : Cell;
-   TIB_Count : Cell_Access;
-   IN_Ptr    : Cell_Access;
-   State     : Cell_Access;
-
-   TIB_Length : constant := 1024;
-
-   Stack_Marker       : constant   := -1;
-   Forward_Reference  : constant   := -100;
-   Backward_Reference : constant   := -101;
-   Do_Loop_Reference  : constant   := -102;
-   Definition_Reference : constant := -103;
-
-   Current_Name   : Unbounded_String;
-   Current_Action : Action_Type (Forth_Word);
-   Current_IP     : Cell := -1;
-
-   Use_RL         : Boolean := True;
-   --  Should the current input method use Read_Line?
-
-   type Interpreter_Type is record
+   type Interpreter_Body is record
       Data_Stack         : Stack_Type := New_Stack;
       Return_Stack       : Stack_Type := New_Stack;
       Compilation_Buffer : Compilation_Buffers.Vector;
@@ -246,5 +219,7 @@ private
       Current_IP         : Cell := -1;
       Use_RL             : Boolean := True;
    end record;
+
+   type Interpreter_Type is not null access Interpreter_Body;
 
 end Forth.Interpreter;

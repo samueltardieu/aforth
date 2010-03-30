@@ -8,6 +8,7 @@ package Forth.Types is
 
    type Cell_Array is array (Positive range <>) of Cell;
 
+   Bye_Exception                : exception;
    Compile_Only                 : exception;
    Stack_Underflow              : exception;
    Unbalanced_Control_Structure : exception;

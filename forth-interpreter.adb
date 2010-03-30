@@ -11,13 +11,27 @@ package body Forth.Interpreter is
    --  Notes:
    --    - the compilation stack is the data stack
 
-   procedure Register (Name   : String;
+   TIB_Length           : constant := 1024;
+
+   Stack_Marker         : constant := -1;
+   Forward_Reference    : constant := -100;
+   Backward_Reference   : constant := -101;
+   Do_Loop_Reference    : constant := -102;
+   Definition_Reference : constant := -103;
+
+   use Dictionaries, Compilation_Buffers;
+
+   procedure Initialize (I : IT);
+   --  Register builtin words (Ada and Forth primitives)
+
+   procedure Register (I      : IT;
+                       Name   : String;
                        Action : Action_Type);
 
-   function Find (Name : String) return Action_Type;
+   function Find (I : IT; Name : String) return Action_Type;
    --  May raise Word_Not_Found
 
-   procedure Add_To_Compilation_Buffer (Action : Action_Type);
+   procedure Add_To_Compilation_Buffer (I : IT; Action : Action_Type);
 
    function Next_Index (V : Compilation_Buffers.Vector)
      return Natural_Cell;
@@ -25,10 +39,8 @@ package body Forth.Interpreter is
    package Cell_IO is new Ada.Text_IO.Integer_IO (Cell);
    use Cell_IO;
 
-   pragma Warnings (Off);
    function To_Cell_Access is
       new Ada.Unchecked_Conversion (Byte_Access, Cell_Access);
-   pragma Warnings (On);
 
    function To_Unsigned_32 is
       new Ada.Unchecked_Conversion (Cell, Unsigned_32);
@@ -45,57 +57,59 @@ package body Forth.Interpreter is
                                          Forth_Proc => -1);
 
    procedure Remember_Variable
-     (Name : String;
+     (I    : IT;
+      Name : String;
       Var  : out Cell_Access);
 
    procedure Remember_Variable
-     (Name : String;
+     (I    : IT;
+      Name : String;
       Var  : out Cell);
 
-   procedure Start_Definition (Name : String := "");
+   procedure Start_Definition (I : IT; Name : String := "");
 
-   function To_String return String;
+   function To_String (I : IT) return String;
 
-   procedure Execute_Action (Action : Action_Type);
+   procedure Execute_Action (I : IT; Action : Action_Type);
 
-   procedure Execute_Forth_Word (Addr : Cell);
+   procedure Execute_Forth_Word (I : IT; Addr : Cell);
 
-   procedure Main_Loop;
+   procedure Main_Loop (I : IT);
 
-   function Word return String;
+   function Word (I : IT) return String;
 
-   procedure Jump;
-   procedure Jump_If_False;
-   procedure Patch_Jump (To_Patch : Cell; Target : Cell);
+   procedure Jump (I : IT);
+   procedure Jump_If_False (I : IT);
+   procedure Patch_Jump (I : IT; To_Patch : Cell; Target : Cell);
 
-   procedure Add_To_Compilation_Buffer (Ada_Proc : Ada_Word_Access);
-   procedure Add_To_Compilation_Buffer (Value : Cell);
+   procedure Add_To_Compilation_Buffer (I : IT; Ada_Proc : Ada_Word_Access);
+   procedure Add_To_Compilation_Buffer (I : IT; Value : Cell);
 
-   procedure DoDoes;
+   procedure DoDoes (I : IT);
 
-   procedure Refill_Line (Buffer : String);
+   procedure Refill_Line (I : IT; Buffer : String);
 
-   procedure Check_Compile_Only;
+   procedure Check_Compile_Only (I : IT);
 
-   procedure Tick (Name : String);
+   procedure Tick (I : IT; Name : String);
 
-   procedure Check_Control_Structure (Reference : Cell);
+   procedure Check_Control_Structure (I : IT; Reference : Cell);
 
    function Is_Blank (C : Character) return Boolean;
 
-   function Parse_Number (S : String) return Cell;
+   function Parse_Number (I : IT; S : String) return Cell;
    --  Parse a number given the current base. This will raise Constraint_Error
    --  if the number cannot be parsed.
 
-   function Peek return Cell;
+   function Peek (I : IT) return Cell;
 
    -------------------------------
    -- Add_To_Compilation_Buffer --
    -------------------------------
 
-   procedure Add_To_Compilation_Buffer (Action : Action_Type) is
+   procedure Add_To_Compilation_Buffer (I : IT; Action : Action_Type) is
    begin
-      Check_Compile_Only;
+      Check_Compile_Only (I);
 
       --  Call or inline words
 
@@ -103,13 +117,14 @@ package body Forth.Interpreter is
          declare
             Index : Cell := Action.Forth_Proc;
          begin
-            while Element (Compilation_Buffer, Index) /= Forth_Exit loop
-               Add_To_Compilation_Buffer (Element (Compilation_Buffer, Index));
+            while Element (I.Compilation_Buffer, Index) /= Forth_Exit loop
+               Add_To_Compilation_Buffer
+                 (I, Element (I.Compilation_Buffer, Index));
                Index := Index + 1;
             end loop;
          end;
       else
-         Append (Compilation_Buffer, Action);
+         Append (I.Compilation_Buffer, Action);
       end if;
    end Add_To_Compilation_Buffer;
 
@@ -117,10 +132,11 @@ package body Forth.Interpreter is
    -- Add_To_Compilation_Buffer --
    -------------------------------
 
-   procedure Add_To_Compilation_Buffer (Ada_Proc : Ada_Word_Access) is
+   procedure Add_To_Compilation_Buffer (I : IT; Ada_Proc : Ada_Word_Access) is
    begin
       Add_To_Compilation_Buffer
-        (Action_Type'(Kind      => Ada_Word,
+        (I,
+         Action_Type'(Kind      => Ada_Word,
                       Immediate => True,
                       Ada_Proc  => Ada_Proc));
    end Add_To_Compilation_Buffer;
@@ -129,10 +145,11 @@ package body Forth.Interpreter is
    -- Add_To_Compilation_Buffer --
    -------------------------------
 
-   procedure Add_To_Compilation_Buffer (Value : Cell) is
+   procedure Add_To_Compilation_Buffer (I : IT; Value : Cell) is
    begin
       Add_To_Compilation_Buffer
-        (Action_Type'(Kind      => Number,
+        (I,
+         Action_Type'(Kind      => Number,
                       Immediate => True,
                       Value     => Value));
    end Add_To_Compilation_Buffer;
@@ -141,38 +158,38 @@ package body Forth.Interpreter is
    -- Again --
    -----------
 
-   procedure Again is
+   procedure Again (I : IT) is
    begin
-      Check_Control_Structure (Backward_Reference);
-      Literal;
-      Add_To_Compilation_Buffer (Jump'Access);
-      Check_Control_Structure (Stack_Marker);
+      Check_Control_Structure (I, Backward_Reference);
+      Literal (I);
+      Add_To_Compilation_Buffer (I, Jump'Access);
+      Check_Control_Structure (I, Stack_Marker);
    end Again;
 
    -----------
    -- Ahead --
    -----------
 
-   procedure Ahead is
+   procedure Ahead (I : IT) is
 
       --  The compilation stack contains the index of the address to
       --  patch when the AHEAD is resolved by a THEN.
 
    begin
-      Push (Next_Index (Compilation_Buffer));
-      Push (Forward_Reference);
-      Add_To_Compilation_Buffer (0);
-      Add_To_Compilation_Buffer (Jump'Access);
+      Push (I, Next_Index (I.Compilation_Buffer));
+      Push (I, Forward_Reference);
+      Add_To_Compilation_Buffer (I, 0);
+      Add_To_Compilation_Buffer (I, Jump'Access);
    end Ahead;
 
    -----------
    -- Align --
    -----------
 
-   procedure Align is
+   procedure Align (I : IT) is
    begin
-      if Here.all mod 4 /= 0 then
-         Here.all := Here.all + (4 - (Here.all mod 4));
+      if I.Here.all mod 4 /= 0 then
+         I.Here.all := I.Here.all + (4 - (I.Here.all mod 4));
       end if;
    end Align;
 
@@ -180,7 +197,7 @@ package body Forth.Interpreter is
    -- Bye --
    ---------
 
-   procedure Bye is
+   procedure Bye (I : IT) is
    begin
       raise Bye_Exception;
    end Bye;
@@ -189,29 +206,29 @@ package body Forth.Interpreter is
    -- Cfetch --
    ------------
 
-   procedure Cfetch is
+   procedure Cfetch (I : IT) is
    begin
-      Push (Cell (Memory (Pop)));
+      Push (I, Cell (I.Memory (Pop (I))));
    end Cfetch;
 
    ------------
    -- Cfetch --
    ------------
 
-   function Cfetch (Addr : Cell) return Cell is
+   function Cfetch (I : IT; Addr : Cell) return Cell is
    begin
-      Push (Addr);
-      Cfetch;
-      return Pop;
+      Push (I, Addr);
+      Cfetch (I);
+      return Pop (I);
    end Cfetch;
 
    ------------------------
    -- Check_Compile_Only --
    ------------------------
 
-   procedure Check_Compile_Only is
+   procedure Check_Compile_Only (I : IT) is
    begin
-      if State.all /= 1 then
+      if I.State.all /= 1 then
          raise Compile_Only;
       end if;
    end Check_Compile_Only;
@@ -220,10 +237,10 @@ package body Forth.Interpreter is
    -- Check_Control_Structure --
    -----------------------------
 
-   procedure Check_Control_Structure (Reference : Cell) is
+   procedure Check_Control_Structure (I : IT; Reference : Cell) is
    begin
-      Check_Compile_Only;
-      if Pop /= Reference then
+      Check_Compile_Only (I);
+      if Pop (I) /= Reference then
          raise Unbalanced_Control_Structure;
       end if;
    end Check_Control_Structure;
@@ -232,237 +249,237 @@ package body Forth.Interpreter is
    -- Colon --
    -----------
 
-   procedure Colon is
+   procedure Colon (I : IT) is
    begin
-      Start_Definition (Word);
+      Start_Definition (I, Word (I));
    end Colon;
 
    ------------------
    -- Colon_Noname --
    ------------------
 
-   procedure Colon_Noname is
+   procedure Colon_Noname (I : IT) is
    begin
-      Push (Next_Index (Compilation_Buffer));
-      Start_Definition;
+      Push (I, Next_Index (I.Compilation_Buffer));
+      Start_Definition (I);
    end Colon_Noname;
 
    -------------------
    -- Compile_Comma --
    -------------------
 
-   procedure Compile_Comma is
+   procedure Compile_Comma (I : IT) is
    begin
-      Add_To_Compilation_Buffer (Pop);
-      Add_To_Compilation_Buffer (Execute'Access);
+      Add_To_Compilation_Buffer (I, Pop (I));
+      Add_To_Compilation_Buffer (I, Execute'Access);
    end Compile_Comma;
 
    ------------------
    -- Compile_Exit --
    ------------------
 
-   procedure Compile_Exit is
+   procedure Compile_Exit (I : IT) is
    begin
-      Add_To_Compilation_Buffer (Forth_Exit);
+      Add_To_Compilation_Buffer (I, Forth_Exit);
    end Compile_Exit;
 
    ------------------
    -- Compile_Mode --
    ------------------
 
-   procedure Compile_Mode is
+   procedure Compile_Mode (I : IT) is
    begin
-      State.all := 1;
+      I.State.all := 1;
    end Compile_Mode;
 
    -----------
    -- Count --
    -----------
 
-   procedure Count is
-      Start : constant Cell := Pop;
+   procedure Count (I : IT) is
+      Start : constant Cell := Pop (I);
    begin
-      Push (Start + 1);
-      Push (Cell (Memory (Start)));
+      Push (I, Start + 1);
+      Push (I, Cell (I.Memory (Start)));
    end Count;
 
    --------
    -- Cr --
    --------
 
-   procedure Cr is
+   procedure Cr (I : IT) is
    begin
-      Push (13);
-      Emit;
-      Push (10);
-      Emit;
+      Push (I, 13);
+      Emit (I);
+      Push (I, 10);
+      Emit (I);
    end Cr;
 
    ------------
    -- Cstore --
    ------------
 
-   procedure Cstore is
-      Addr : constant Cell := Pop;
+   procedure Cstore (I : IT) is
+      Addr : constant Cell := Pop (I);
    begin
-      Memory (Addr) := Unsigned_8 (Pop);
+      I.Memory (Addr) := Unsigned_8 (Pop (I));
    end Cstore;
 
    -----------
    -- D_Abs --
    -----------
 
-   procedure D_Abs is
+   procedure D_Abs (I : IT) is
    begin
-      Push_64 (abs (Pop_64));
+      Push_64 (I, abs (Pop_64 (I)));
    end D_Abs;
 
    -------------
    -- D_Equal --
    -------------
 
-   procedure D_Equal is
+   procedure D_Equal (I : IT) is
    begin
-      Push (Pop_64 = Pop_64);
+      Push (I, Pop_64 (I) = Pop_64 (I));
    end D_Equal;
 
    -----------
    -- D_Max --
    -----------
 
-   procedure D_Max is
+   procedure D_Max (I : IT) is
    begin
-      Push_64 (Integer_64'Max (Pop_64, Pop_64));
+      Push_64 (I, Integer_64'Max (Pop_64 (I), Pop_64 (I)));
    end D_Max;
 
    -----------
    -- D_Min --
    -----------
 
-   procedure D_Min is
+   procedure D_Min (I : IT) is
    begin
-      Push_64 (Integer_64'Min (Pop_64, Pop_64));
+      Push_64 (I, Integer_64'Min (Pop_64 (I), Pop_64 (I)));
    end D_Min;
 
    -------------
    -- D_Minus --
    -------------
 
-   procedure D_Minus is
-      X : constant Integer_64 := Pop_64;
+   procedure D_Minus (I : IT) is
+      X : constant Integer_64 := Pop_64 (I);
    begin
-      Push_64 (Pop_64 - X);
+      Push_64 (I, Pop_64 (I) - X);
    end D_Minus;
 
    ------------
    -- D_Plus --
    ------------
 
-   procedure D_Plus is
+   procedure D_Plus (I : IT) is
    begin
-      Push_64 (Pop_64 + Pop_64);
+      Push_64 (I, Pop_64 (I) + Pop_64 (I));
    end D_Plus;
 
    ---------------
    -- D_Smaller --
    ---------------
 
-   procedure D_Smaller is
-      X : constant Integer_64 := Pop_64;
+   procedure D_Smaller (I : IT) is
+      X : constant Integer_64 := Pop_64 (I);
    begin
-      Push (Pop_64 < X);
+      Push (I, Pop_64 (I) < X);
    end D_Smaller;
 
    ---------------
    -- D_Two_Div --
    ---------------
 
-   procedure D_Two_Div is
-      A : constant Integer_64 := Pop_64;
+   procedure D_Two_Div (I : IT) is
+      A : constant Integer_64 := Pop_64 (I);
       B : Unsigned_64 := To_Unsigned_64 (A) / 2;
    begin
       if A < 0 then
          B := B or (2 ** 63);
       end if;
-      Push_Unsigned_64 (B);
+      Push_Unsigned_64 (I, B);
    end D_Two_Div;
 
    -----------------
    -- D_Two_Times --
    -----------------
 
-   procedure D_Two_Times is
+   procedure D_Two_Times (I : IT) is
    begin
-      Push_Unsigned_64 (Pop_Unsigned_64 * 2);
+      Push_Unsigned_64 (I, Pop_Unsigned_64 (I) * 2);
    end D_Two_Times;
 
    -----------
    -- Depth --
    -----------
 
-   procedure Depth is
+   procedure Depth (I : IT) is
    begin
-      Push (Cell (Length (Data_Stack)));
+      Push (I, Cell (Length (I.Data_Stack)));
    end Depth;
 
    ------------
    -- DivMod --
    ------------
 
-   procedure DivMod is
-      B : constant Cell := Pop;
-      A : constant Cell := Pop;
+   procedure DivMod (I : IT) is
+      B : constant Cell := Pop (I);
+      A : constant Cell := Pop (I);
    begin
-      Push (A rem B);
-      Push (A / B);
+      Push (I, A rem B);
+      Push (I, A / B);
    end DivMod;
 
    ------------
    -- DoDoes --
    ------------
 
-   procedure DoDoes is
+   procedure DoDoes (I : IT) is
    begin
       --  Patch the latest exit by inserting a call to the current
       --  action.
 
-      pragma Assert (Last_Element (Compilation_Buffer) = Forth_Exit);
-      Insert (Compilation_Buffer,
-              Last_Index (Compilation_Buffer),
+      pragma Assert (Last_Element (I.Compilation_Buffer) = Forth_Exit);
+      Insert (I.Compilation_Buffer,
+              Last_Index (I.Compilation_Buffer),
               Action_Type'(Kind       => Forth_Word,
                            Immediate  => True,
                            Inline     => False,
-                           Forth_Proc => Pop));
+                           Forth_Proc => Pop (I)));
    end DoDoes;
 
    ----------
    -- Does --
    ----------
 
-   procedure Does is
+   procedure Does (I : IT) is
 
       --  Terminate current word after asking to patch the latest created
       --  one. Compilation buffer after index, call to DoDoes and exit
       --  is Compilation_Index + 3.
 
-      Does_Part : constant Cell := Last_Index (Compilation_Buffer) + 4;
+      Does_Part : constant Cell := Last_Index (I.Compilation_Buffer) + 4;
    begin
-      Add_To_Compilation_Buffer (Does_Part);
-      Add_To_Compilation_Buffer (DoDoes'Access);
-      Semicolon;
+      Add_To_Compilation_Buffer (I, Does_Part);
+      Add_To_Compilation_Buffer (I, DoDoes'Access);
+      Semicolon (I);
 
       --  Start an unnamed word corresponding to the DOES> part
 
-      Start_Definition;
-      pragma Assert (Next_Index (Compilation_Buffer) = Does_Part);
+      Start_Definition (I);
+      pragma Assert (Next_Index (I.Compilation_Buffer) = Does_Part);
    end Does;
 
    ----------
    -- Drop --
    ----------
 
-   procedure Drop is
-      Value : constant Cell := Pop;
+   procedure Drop (I : IT) is
+      Value : constant Cell := Pop (I);
       pragma Unreferenced (Value);
    begin
       null;
@@ -472,60 +489,60 @@ package body Forth.Interpreter is
    -- Dup --
    ---------
 
-   procedure Dup is
+   procedure Dup (I : IT) is
    begin
-      Push (Peek (Data_Stack));
+      Push (I, Peek (I.Data_Stack));
    end Dup;
 
    ----------
    -- Emit --
    ----------
 
-   procedure Emit is
+   procedure Emit (I : IT) is
    begin
-      Put (Character'Val (Pop));
+      Put (Character'Val (Pop (I)));
    end Emit;
 
    -----------
    -- Equal --
    -----------
 
-   procedure Equal is
+   procedure Equal (I : IT) is
    begin
-      Push (Pop = Pop);
+      Push (I, Pop (I) = Pop (I));
    end Equal;
 
    --------------
    -- Evaluate --
    --------------
 
-   procedure Evaluate is
+   procedure Evaluate (I : IT) is
    begin
-      Interpret_Line (To_String);
+      Interpret_Line (I, To_String (I));
    end Evaluate;
 
    -------------
    -- Execute --
    -------------
 
-   procedure Execute is
+   procedure Execute (I : IT) is
    begin
-      Execute_Forth_Word (Pop);
+      Execute_Forth_Word (I, Pop (I));
    end Execute;
 
    --------------------
    -- Execute_Action --
    --------------------
 
-   procedure Execute_Action (Action : Action_Type) is
+   procedure Execute_Action (I : IT; Action : Action_Type) is
    begin
       case Action.Kind is
          when Ada_Word =>
-            Action.Ada_Proc.all;
+            Action.Ada_Proc.all (I);
          when Forth_Word =>
-            Execute_Forth_Word (Action.Forth_Proc);
+            Execute_Forth_Word (I, Action.Forth_Proc);
          when Number =>
-            Push (Action.Value);
+            Push (I, Action.Value);
       end case;
    end Execute_Action;
 
@@ -533,21 +550,21 @@ package body Forth.Interpreter is
    -- Execute_Forth_Word --
    ------------------------
 
-   procedure Execute_Forth_Word (Addr : Cell) is
+   procedure Execute_Forth_Word (I : IT; Addr : Cell) is
    begin
-      Push (Return_Stack, Current_IP);
-      Current_IP := Addr;
+      Push (I.Return_Stack, I.Current_IP);
+      I.Current_IP := Addr;
       loop
          declare
             Current_Action : constant Action_Type :=
-              Element (Compilation_Buffer, Current_IP);
+              Element (I.Compilation_Buffer, I.Current_IP);
          begin
-            Current_IP := Current_IP + 1;
+            I.Current_IP := I.Current_IP + 1;
             if Current_Action = Forth_Exit then
-               Current_IP := Pop (Return_Stack);
+               I.Current_IP := Pop (I.Return_Stack);
                return;
             end if;
-            Execute_Action (Current_Action);
+            Execute_Action (I, Current_Action);
          end;
       end loop;
    end Execute_Forth_Word;
@@ -556,56 +573,57 @@ package body Forth.Interpreter is
    -- Fetch --
    -----------
 
-   procedure Fetch is
-      Addr  : constant Cell_Access := To_Cell_Access (Memory (Pop)'Access);
+   procedure Fetch (I : IT) is
+      Addr  : constant Cell_Access :=
+        To_Cell_Access (I.Memory (Pop (I))'Access);
    begin
-      Push (Addr.all);
+      Push (I, Addr.all);
    end Fetch;
 
    -----------
    -- Fetch --
    -----------
 
-   function Fetch (Addr : Cell) return Cell is
+   function Fetch (I : IT; Addr : Cell) return Cell is
    begin
-      Push (Addr);
-      Fetch;
-      return Pop;
+      Push (I, Addr);
+      Fetch (I);
+      return Pop (I);
    end Fetch;
 
    ----------
    -- Find --
    ----------
 
-   procedure Find is
-      C : constant Cell := Peek;
+   procedure Find (I : IT) is
+      C : constant Cell := Peek (I);
       A : Action_Type;
    begin
-      Count;
-      A := Find (To_String);
-      Push (A.Forth_Proc);
+      Count (I);
+      A := Find (I, To_String (I));
+      Push (I, A.Forth_Proc);
       if A.Immediate then
-         Push (1);
+         Push (I, 1);
       else
-         Push (-1);
+         Push (I, -1);
       end if;
    exception
       when Word_Not_Found =>
-         Push (C);
-         Push (0);
+         Push (I, C);
+         Push (I, 0);
    end Find;
 
    ----------
    -- Find --
    ----------
 
-   function Find (Name : String) return Action_Type
+   function Find (I : IT; Name : String) return Action_Type
    is
       Lower_Name : constant String := To_Lower (Name);
    begin
-      for I in reverse First_Index (Dict) .. Last_Index (Dict) loop
+      for J in reverse First_Index (I.Dict) .. Last_Index (I.Dict) loop
          declare
-            Current : Dictionary_Entry renames Element (Dict, I);
+            Current : Dictionary_Entry renames Element (I.Dict, J);
          begin
             if To_Lower (To_String (Current.Name)) = Lower_Name then
                pragma Assert (Current.Action.Kind = Forth_Word);
@@ -620,31 +638,31 @@ package body Forth.Interpreter is
    -- Fm_Slash_Mod --
    ------------------
 
-   procedure Fm_Slash_Mod is
-      Divisor   : constant Integer_64 := Integer_64 (Pop);
-      Dividend  : constant Integer_64 := Pop_64;
+   procedure Fm_Slash_Mod (I : IT) is
+      Divisor   : constant Integer_64 := Integer_64 (Pop (I));
+      Dividend  : constant Integer_64 := Pop_64 (I);
       Remainder : constant Integer_64 := Dividend mod Divisor;
       Quotient  : constant Integer_64 := (Dividend - Remainder) / Divisor;
    begin
-      Push (Cell (Remainder));
-      Push_64 (Quotient);
-      Drop;
+      Push (I, Cell (Remainder));
+      Push_64 (I, Quotient);
+      Drop (I);
    end Fm_Slash_Mod;
 
    ---------------
    -- Forth_And --
    ---------------
 
-   procedure Forth_And is
+   procedure Forth_And (I : IT) is
    begin
-      Push_Unsigned (Pop_Unsigned and Pop_Unsigned);
+      Push_Unsigned (I, Pop_Unsigned (I) and Pop_Unsigned (I));
    end Forth_And;
 
    -----------------
    -- Forth_Begin --
    -----------------
 
-   procedure Forth_Begin is
+   procedure Forth_Begin (I : IT) is
 
       --  The structure of the BEGIN/WHILE/REPEAT loop on the compilation
       --  stack is:
@@ -656,16 +674,16 @@ package body Forth.Interpreter is
       --    Backward_Reference
 
    begin
-      Push (Stack_Marker);
-      Push (Next_Index (Compilation_Buffer));
-      Push (Backward_Reference);
+      Push (I, Stack_Marker);
+      Push (I, Next_Index (I.Compilation_Buffer));
+      Push (I, Backward_Reference);
    end Forth_Begin;
 
    --------------
    -- Forth_Do --
    --------------
 
-   procedure Forth_Do is
+   procedure Forth_Do (I : IT) is
 
       --  The structure of a DO - LOOP/+LOOP on the compilation stack
       --  is:
@@ -681,108 +699,109 @@ package body Forth.Interpreter is
       --    Loop_Index
 
    begin
-      Add_To_Compilation_Buffer (Two_To_R'Access);
-      Push (Stack_Marker);
-      Push (Next_Index (Compilation_Buffer));
-      Push (Do_Loop_Reference);
+      Add_To_Compilation_Buffer (I, Two_To_R'Access);
+      Push (I, Stack_Marker);
+      Push (I, Next_Index (I.Compilation_Buffer));
+      Push (I, Do_Loop_Reference);
    end Forth_Do;
 
    --------------
    -- Forth_If --
    --------------
 
-   procedure Forth_If is
+   procedure Forth_If (I : IT) is
    begin
-      Push (Next_Index (Compilation_Buffer));
-      Push (Forward_Reference);
-      Add_To_Compilation_Buffer (0);
-      Add_To_Compilation_Buffer (Jump_If_False'Access);
+      Push (I, Next_Index (I.Compilation_Buffer));
+      Push (I, Forward_Reference);
+      Add_To_Compilation_Buffer (I, 0);
+      Add_To_Compilation_Buffer (I, Jump_If_False'Access);
    end Forth_If;
 
    --------------
    -- Forth_Or --
    --------------
 
-   procedure Forth_Or is
+   procedure Forth_Or (I : IT) is
    begin
-      Push_Unsigned (Pop_Unsigned or Pop_Unsigned);
+      Push_Unsigned (I, Pop_Unsigned (I) or Pop_Unsigned (I));
    end Forth_Or;
 
    ----------------
    -- Forth_Then --
    ----------------
 
-   procedure Forth_Then is
+   procedure Forth_Then (I : IT) is
    begin
-      Check_Control_Structure (Forward_Reference);
-      Patch_Jump (To_Patch => Pop,
-                  Target   => Next_Index (Compilation_Buffer));
+      Check_Control_Structure (I, Forward_Reference);
+      Patch_Jump (I,
+                  To_Patch => Pop (I),
+                  Target   => Next_Index (I.Compilation_Buffer));
    end Forth_Then;
 
    -----------------
    -- Forth_While --
    -----------------
 
-   procedure Forth_While is
+   procedure Forth_While (I : IT) is
    begin
-      Check_Control_Structure (Backward_Reference);
-      Push (Next_Index (Compilation_Buffer));
-      Swap;
-      Add_To_Compilation_Buffer (0);
-      Add_To_Compilation_Buffer (Jump_If_False'Access);
-      Push (Backward_Reference);
+      Check_Control_Structure (I, Backward_Reference);
+      Push (I, Next_Index (I.Compilation_Buffer));
+      Swap (I);
+      Add_To_Compilation_Buffer (I, 0);
+      Add_To_Compilation_Buffer (I, Jump_If_False'Access);
+      Push (I, Backward_Reference);
    end Forth_While;
 
    ---------------
    -- Forth_Xor --
    ---------------
 
-   procedure Forth_Xor is
+   procedure Forth_Xor (I : IT) is
    begin
-      Push_Unsigned (Pop_Unsigned xor Pop_Unsigned);
+      Push_Unsigned (I, Pop_Unsigned (I) xor Pop_Unsigned (I));
    end Forth_Xor;
 
    ------------
    -- From_R --
    ------------
 
-   procedure From_R is
+   procedure From_R (I : IT) is
    begin
-      Push (Pop (Return_Stack));
+      Push (I, Pop (I.Return_Stack));
    end From_R;
 
    ------------------
    -- Greaterequal --
    ------------------
 
-   procedure Greaterequal is
-      B : constant Cell := Pop;
+   procedure Greaterequal (I : IT) is
+      B : constant Cell := Pop (I);
    begin
-      Push (Pop >= B);
+      Push (I, Pop (I) >= B);
    end Greaterequal;
 
    -------------
    -- Include --
    -------------
 
-   procedure Include is
+   procedure Include (I : IT) is
    begin
-      Include_File (Word);
+      Include_File (I, Word (I));
    end Include;
 
    ------------------
    -- Include_File --
    ------------------
 
-   procedure Include_File (File_Name : String)
+   procedure Include_File (I : IT; File_Name : String)
    is
       Previous_Input : constant File_Access := Current_Input;
       File           : File_Type;
-      Old_TIB_Count  : constant Cell  := TIB_Count.all;
-      Old_IN_Ptr     : constant Cell  := IN_Ptr.all;
+      Old_TIB_Count  : constant Cell  := I.TIB_Count.all;
+      Old_IN_Ptr     : constant Cell  := I.IN_Ptr.all;
       Old_TIB        : constant Byte_Array  :=
-        Memory (TIB .. TIB + Old_TIB_Count - 1);
-      Old_Use_RL     : constant Boolean     := Use_RL;
+        I.Memory (I.TIB .. I.TIB + Old_TIB_Count - 1);
+      Old_Use_RL     : constant Boolean     := I.Use_RL;
    begin
       begin
          Open (File, In_File, File_Name);
@@ -792,24 +811,146 @@ package body Forth.Interpreter is
             raise;
       end;
       Set_Input (File);
-      Use_RL := False;
+      I.Use_RL := False;
       begin
-         Main_Loop;
+         Main_Loop (I);
       exception
          when End_Error =>
             Close (File);
             Set_Input (Previous_Input.all);
-            Memory (TIB .. TIB + Old_TIB_Count - 1) := Old_TIB;
-            TIB_Count.all                           := Old_TIB_Count;
-            IN_Ptr.all                              := Old_IN_Ptr;
-            Use_RL                                  := Old_Use_RL;
+            I.Memory (I.TIB .. I.TIB + Old_TIB_Count - 1) := Old_TIB;
+            I.TIB_Count.all                               := Old_TIB_Count;
+            I.IN_Ptr.all                                  := Old_IN_Ptr;
+            I.Use_RL                                      := Old_Use_RL;
          when others =>
             Close (File);
             Set_Input (Previous_Input.all);
-            Use_RL := Old_Use_RL;
+            I.Use_RL := Old_Use_RL;
             raise;
       end;
    end Include_File;
+
+   ----------------
+   -- Initialize --
+   ----------------
+
+   procedure Initialize (I : IT) is
+   begin
+   --  Store and register HERE at position 0 -- bootstrap STATE at position 4
+      I.State := To_Cell_Access (I.Memory (4)'Access);
+      Store (I, 0, 4);
+      Start_Definition (I, "(HERE)");
+      Add_To_Compilation_Buffer (I, 0);
+      Semicolon (I);
+      Remember_Variable (I, "(HERE)", I.Here);
+      Make_And_Remember_Variable (I, "STATE", I.State);
+
+      --  Default existing variables
+      Make_And_Remember_Variable (I, "BASE", I.Base, Initial_Value => 10);
+      Make_And_Remember_Variable (I, "TIB", I.TIB, Size => 1024);
+      Make_And_Remember_Variable (I, "TIB#", I.TIB_Count);
+      Make_And_Remember_Variable (I, ">IN", I.IN_Ptr);
+
+      --  Default Ada words
+      Register_Ada_Word (I, "AGAIN", Again'Access, Immediate => True);
+      Register_Ada_Word (I, "AHEAD", Ahead'Access, Immediate => True);
+      Register_Ada_Word (I, "ALIGN", Align'Access);
+      Register_Ada_Word (I, "BYE", Bye'Access);
+      Register_Ada_Word (I, "C@", Cfetch'Access);
+      Register_Ada_Word (I, "COMPILE,", Compile_Comma'Access);
+      Register_Ada_Word (I, "COUNT", Count'Access);
+      Register_Ada_Word (I, "C!", Cstore'Access);
+      Register_Ada_Word (I, ":", Colon'Access);
+      Register_Ada_Word (I, ":NONAME", Colon_Noname'Access);
+      Register_Ada_Word (I, "]", Compile_Mode'Access);
+      Register_Ada_Word (I, "CR", Cr'Access);
+      Register_Ada_Word (I, "DABS", D_Abs'Access);
+      Register_Ada_Word (I, "D=", D_Equal'Access);
+      Register_Ada_Word (I, "DMAX", D_Max'Access);
+      Register_Ada_Word (I, "DMIN", D_Min'Access);
+      Register_Ada_Word (I, "D-", D_Minus'Access);
+      Register_Ada_Word (I, "D+", D_Plus'Access);
+      Register_Ada_Word (I, "D<", D_Smaller'Access);
+      Register_Ada_Word (I, "D2/", D_Two_Div'Access);
+      Register_Ada_Word (I, "D2*", D_Two_Times'Access);
+      Register_Ada_Word (I, "DEPTH", Depth'Access);
+      Register_Ada_Word (I, "/MOD", DivMod'Access);
+      Register_Ada_Word (I, "DOES>", Does'Access, Immediate => True);
+      Register_Ada_Word (I, "DROP", Drop'Access);
+      Register_Ada_Word (I, "DUP", Dup'Access);
+      Register_Ada_Word (I, "EMIT", Emit'Access);
+      Register_Ada_Word (I, "=", Equal'Access);
+      Register_Ada_Word (I, "EVALUATE", Evaluate'Access);
+      Register_Ada_Word (I, "EXECUTE", Execute'Access);
+      Register_Ada_Word (I, "@", Fetch'Access);
+      Register_Ada_Word (I, "FIND", Find'Access);
+      Register_Ada_Word (I, "FM/MOD", Fm_Slash_Mod'Access);
+      Register_Ada_Word (I, "AND", Forth_And'Access);
+      Register_Ada_Word (I, "BEGIN", Forth_Begin'Access, Immediate => True);
+      Register_Ada_Word (I, "DO", Forth_Do'Access, Immediate => True);
+      Register_Ada_Word (I, "EXIT", Compile_Exit'Access, Immediate => True);
+      Register_Ada_Word (I, "IF", Forth_If'Access, Immediate => True);
+      Register_Ada_Word (I, "OR", Forth_Or'Access);
+      Register_Ada_Word (I, "THEN", Forth_Then'Access, Immediate => True);
+      Register_Ada_Word (I, "WHILE", Forth_While'Access, Immediate => True);
+      Register_Ada_Word (I, "XOR", Forth_Xor'Access);
+      Register_Ada_Word (I, "R>", From_R'Access);
+      Register_Ada_Word (I, ">=", Greaterequal'Access);
+      Register_Ada_Word (I, "J", J'Access);
+      Register_Ada_Word (I, "INCLUDE", Include'Access);
+      Register_Ada_Word (I, "[", Interpret_Mode'Access, Immediate => True);
+      Register_Ada_Word (I, "LEAVE", Leave'Access, Immediate => True);
+      Register_Ada_Word (I, "LITERAL", Literal'Access, Immediate => True);
+      Register_Ada_Word (I, "LSHIFT", Lshift'Access);
+      Register_Ada_Word (I, "KEY", Key'Access);
+      Register_Ada_Word (I, "MS", MS'Access);
+      Register_Ada_Word (I, "M*", Mstar'Access);
+      Register_Ada_Word (I, "0<", Negative'Access);
+      Register_Ada_Word (I, "PARSE", Parse'Access);
+      Register_Ada_Word (I, "PARSE-WORD", Parse_Word'Access);
+      Register_Ada_Word (I, "PICK", Pick'Access);
+      Register_Ada_Word (I, "+", Plus'Access);
+      Register_Ada_Word (I, "+LOOP", Plus_Loop'Access, Immediate => True);
+      Register_Ada_Word (I, "POSTPONE", Postpone'Access, Immediate => True);
+      Register_Ada_Word (I, "QUIT", Quit'Access);
+      Register_Ada_Word (I, "R@", R_At'Access);
+      Register_Ada_Word (I, "RECURSE", Recurse'Access, Immediate => True);
+      Register_Ada_Word (I, "REFILL", Refill'Access);
+      Register_Ada_Word (I, "REPEAT", Repeat'Access, Immediate => True);
+      Register_Ada_Word (I, "ROLL", Roll'Access);
+      Register_Ada_Word (I, "RSHIFT", Rshift'Access);
+      Register_Ada_Word (I, "S>D", S_To_D'Access);
+      Register_Ada_Word (I, "*/MOD", ScaleMod'Access);
+      Register_Ada_Word (I, "SEE", See'Access);
+      Register_Ada_Word (I, ";", Semicolon'Access, Immediate => True);
+      Register_Ada_Word (I, "IMMEDIATE", Set_Immediate'Access);
+      Register_Ada_Word (I, "INLINE", Set_Inline'Access);
+      Register_Ada_Word (I, "SKIP-BLANKS", Skip_Blanks'Access);
+      Register_Ada_Word (I, "SM/REM", Sm_Slash_Rem'Access);
+      Register_Ada_Word (I, "SWAP", Swap'Access);
+      Register_Ada_Word (I, "!", Store'Access);
+      Register_Ada_Word (I, "'", Tick'Access);
+      Register_Ada_Word (I, "*", Times'Access);
+      Register_Ada_Word (I, ">BODY", To_Body'Access);
+      Register_Ada_Word (I, ">R", To_R'Access);
+      Register_Ada_Word (I, "2/", Two_Div'Access);
+      Register_Ada_Word (I, "2DUP", Two_Dup'Access);
+      Register_Ada_Word (I, "2R@", Two_R_At'Access);
+      Register_Ada_Word (I, "2>R", Two_To_R'Access);
+      Register_Ada_Word (I, "U<", U_Smaller'Access);
+      Register_Ada_Word (I, "UM/MOD", Um_Slash_Mod'Access);
+      Register_Ada_Word (I, "UM*", Um_Star'Access);
+      Register_Ada_Word (I, "UNLOOP", Unloop'Access);
+      Register_Ada_Word (I, "UNUSED", Unused'Access);
+      Register_Ada_Word (I, "WORD", Word'Access);
+      Register_Ada_Word (I, "WORDS", Words'Access);
+
+      for J in Forth_Builtins.Builtins'Range loop
+         Interpret_Line (I, Forth_Builtins.Builtins (J) .all);
+      end loop;
+
+      Readline.Variable_Bind ("completion-ignore-case", "on");
+   end Initialize;
 
    --------------
    -- Is_Blank --
@@ -824,51 +965,51 @@ package body Forth.Interpreter is
    -- Interpret --
    ---------------
 
-   procedure Interpret is
+   procedure Interpret (I : IT) is
    begin
       loop
          declare
-            W : constant String := Word;
+            W : constant String := Word (I);
             A : Action_Type;
-            I : Cell;
+            C : Cell;
          begin
             if W'Length = 0 then
                exit;
             end if;
-            if State.all = 0 then
+            if I.State.all = 0 then
                begin
-                  A := Find (W);
+                  A := Find (I, W);
                   A.Immediate := True;
-                  Execute_Action (A);
+                  Execute_Action (I, A);
                exception
                   when NF : Word_Not_Found =>
                      begin
-                        I := Parse_Number (W);
+                        C := Parse_Number (I, W);
                      exception
                         when Constraint_Error =>
                            Reraise_Occurrence (NF);
                      end;
-                     Push (I);
+                     Push (I, C);
                   when Compile_Only =>
                      raise Compile_Only with W;
                end;
             else
                begin
-                  A := Find (W);
+                  A := Find (I, W);
                   if A.Immediate then
-                     Execute_Action (A);
+                     Execute_Action (I, A);
                   else
-                     Add_To_Compilation_Buffer (A);
+                     Add_To_Compilation_Buffer (I, A);
                   end if;
                exception
                   when NF : Word_Not_Found =>
                      begin
-                        I := Parse_Number (W);
+                        C := Parse_Number (I, W);
                      exception
                         when Constraint_Error =>
                            Reraise_Occurrence (NF);
                      end;
-                     Add_To_Compilation_Buffer (I);
+                     Add_To_Compilation_Buffer (I, C);
                   when Compile_Only =>
                      raise Compile_Only with W;
                end;
@@ -881,58 +1022,58 @@ package body Forth.Interpreter is
    -- Interpret_Line --
    --------------------
 
-   procedure Interpret_Line (Line : String) is
-      Saved_Count   : constant Cell := TIB_Count.all;
+   procedure Interpret_Line (I : IT; Line : String) is
+      Saved_Count   : constant Cell := I.TIB_Count.all;
       Saved_Content : constant Byte_Array (1 .. TIB_Length) :=
-        Memory (TIB .. TIB + TIB_Length - 1);
-      Saved_Ptr     : constant Cell := IN_Ptr.all;
+        I.Memory (I.TIB .. I.TIB + TIB_Length - 1);
+      Saved_Ptr     : constant Cell := I.IN_Ptr.all;
    begin
-      Refill_Line (Line);
-      Interpret;
-      Memory (TIB .. TIB + TIB_Length - 1) := Saved_Content;
-      TIB_Count.all := Saved_Count;
-      IN_Ptr.all := Saved_Ptr;
+      Refill_Line (I, Line);
+      Interpret (I);
+      I.Memory (I.TIB .. I.TIB + TIB_Length - 1) := Saved_Content;
+      I.TIB_Count.all := Saved_Count;
+      I.IN_Ptr.all := Saved_Ptr;
    end Interpret_Line;
 
    --------------------
    -- Interpret_Mode --
    --------------------
 
-   procedure Interpret_Mode is
+   procedure Interpret_Mode (I : IT) is
    begin
-      State.all := 0;
+      I.State.all := 0;
    end Interpret_Mode;
 
    -------
    -- J --
    -------
 
-   procedure J is
+   procedure J (I : IT) is
    begin
-      if Length (Return_Stack) < 3 then
+      if Length (I.Return_Stack) < 3 then
          raise Stack_Underflow;
       end if;
-      Push (Element (Return_Stack, Length (Return_Stack) - 2));
+      Push (I, Element (I.Return_Stack, Length (I.Return_Stack) - 2));
    end J;
 
    ----------
    -- Jump --
    ----------
 
-   procedure Jump is
+   procedure Jump (I : IT) is
    begin
-      Current_IP := Pop;
+      I.Current_IP := Pop (I);
    end Jump;
 
    -------------------
    -- Jump_If_False --
    -------------------
 
-   procedure Jump_If_False is
-      Target : constant Cell := Pop;
+   procedure Jump_If_False (I : IT) is
+      Target : constant Cell := Pop (I);
    begin
-      if Pop = 0 then
-         Current_IP := Target;
+      if Pop (I) = 0 then
+         I.Current_IP := Target;
       end if;
    end Jump_If_False;
 
@@ -940,29 +1081,29 @@ package body Forth.Interpreter is
    -- Key --
    ---------
 
-   procedure Key is
+   procedure Key (I : IT) is
       C : Character;
    begin
       Get_Immediate (C);
-      Push (Cell (Character'Pos (C)));
+      Push (I, Cell (Character'Pos (C)));
    end Key;
 
    -----------
    -- Leave --
    -----------
 
-   procedure Leave is
+   procedure Leave (I : IT) is
    begin
       --  Look for Do_Loop_Reference on the stack
 
-      for I in reverse 1 .. Length (Data_Stack) loop
-         if Element (Data_Stack, I) = Do_Loop_Reference then
+      for J in reverse 1 .. Length (I.Data_Stack) loop
+         if Element (I.Data_Stack, J) = Do_Loop_Reference then
 
             --  Insert the leave information at the proper place
 
-            Insert (Data_Stack, I - 1, Next_Index (Compilation_Buffer));
-            Add_To_Compilation_Buffer (0);
-            Add_To_Compilation_Buffer (Jump'Access);
+            Insert (I.Data_Stack, J - 1, Next_Index (I.Compilation_Buffer));
+            Add_To_Compilation_Buffer (I, 0);
+            Add_To_Compilation_Buffer (I, Jump'Access);
             return;
          end if;
       end loop;
@@ -974,30 +1115,30 @@ package body Forth.Interpreter is
    -- Literal --
    -------------
 
-   procedure Literal is
+   procedure Literal (I : IT) is
    begin
-      Add_To_Compilation_Buffer (Pop);
+      Add_To_Compilation_Buffer (I, Pop (I));
    end Literal;
 
    ------------
    -- Lshift --
    ------------
 
-   procedure Lshift is
-      U : constant Natural := Natural (Pop_Unsigned);
+   procedure Lshift (I : IT) is
+      U : constant Natural := Natural (Pop_Unsigned (I));
    begin
-      Push (Pop * 2 ** U);
+      Push (I, Pop (I) * 2 ** U);
    end Lshift;
 
    ---------------
    -- Main_Loop --
    ---------------
 
-   procedure Main_Loop is
+   procedure Main_Loop (I : IT) is
    begin
       loop
-         Refill;
-         Interpret;
+         Refill (I);
+         Interpret (I);
       end loop;
    end Main_Loop;
 
@@ -1006,14 +1147,15 @@ package body Forth.Interpreter is
    --------------------------------
 
    procedure Make_And_Remember_Variable
-     (Name          : String;
+     (I             : IT;
+      Name          : String;
       Var           : out Cell_Access;
       Size          : Cell := 4;
       Initial_Value : Cell := 0)
    is
    begin
-      Make_Variable (Name, Size, Initial_Value);
-      Remember_Variable (Name, Var);
+      Make_Variable (I, Name, Size, Initial_Value);
+      Remember_Variable (I, Name, Var);
    end Make_And_Remember_Variable;
 
    --------------------------------
@@ -1021,14 +1163,15 @@ package body Forth.Interpreter is
    --------------------------------
 
    procedure Make_And_Remember_Variable
-     (Name          : String;
+     (I             : IT;
+      Name          : String;
       Var           : out Cell;
       Size          : Cell := 4;
       Initial_Value : Cell := 0)
    is
    begin
-      Make_Variable (Name, Size, Initial_Value);
-      Remember_Variable (Name, Var);
+      Make_Variable (I, Name, Size, Initial_Value);
+      Remember_Variable (I, Name, Var);
    end Make_And_Remember_Variable;
 
    -------------------
@@ -1036,48 +1179,49 @@ package body Forth.Interpreter is
    -------------------
 
    procedure Make_Variable
-     (Name          : String;
+     (I             : IT;
+      Name          : String;
       Size          : Cell := 4;
       Initial_Value : Cell := 0)
    is
    begin
       if Size = 4 then
-         Align;
-         Store (Here.all, Initial_Value);
+         Align (I);
+         Store (I, I.Here.all, Initial_Value);
       elsif Initial_Value /= 0 then
          raise Program_Error;
       end if;
-      Start_Definition (Name);
-      Add_To_Compilation_Buffer (Here.all);
-      Semicolon;
-      Here.all := Here.all + Size;
+      Start_Definition (I, Name);
+      Add_To_Compilation_Buffer (I, I.Here.all);
+      Semicolon (I);
+      I.Here.all := I.Here.all + Size;
    end Make_Variable;
 
    --------
    -- MS --
    --------
 
-   procedure MS is
+   procedure MS (I : IT) is
    begin
-      delay until Clock + Milliseconds (Integer (Pop));
+      delay until Clock + Milliseconds (Integer (Pop (I)));
    end MS;
 
    -----------
    -- Mstar --
    -----------
 
-   procedure Mstar is
+   procedure Mstar (I : IT) is
    begin
-      Push_64 (Integer_64 (Pop) * Integer_64 (Pop));
+      Push_64 (I, Integer_64 (Pop (I)) * Integer_64 (Pop (I)));
    end Mstar;
 
    --------------
    -- Negative --
    --------------
 
-   procedure Negative is
+   procedure Negative (I : IT) is
    begin
-      Push (Pop < 0);
+      Push (I, Pop (I) < 0);
    end Negative;
 
    ----------------
@@ -1089,33 +1233,44 @@ package body Forth.Interpreter is
       return Last_Index (V) + 1;
    end Next_Index;
 
+   ---------------------
+   -- New_Interpreter --
+   ---------------------
+
+   function New_Interpreter return IT is
+   begin
+      return I : constant IT := new Interpreter_Body do
+         Initialize (I);
+      end return;
+   end New_Interpreter;
+
    -----------
    -- Parse --
    -----------
 
-   procedure Parse
+   procedure Parse (I : IT)
    is
-      Char : constant Unsigned_8 := Unsigned_8 (Pop);
+      Char : constant Unsigned_8 := Unsigned_8 (Pop (I));
    begin
-      Push (TIB + IN_Ptr.all);
-      for I in IN_Ptr.all .. TIB_Count.all - 1 loop
-         if Memory (TIB + I) = Char then
-            Push (I - IN_Ptr.all);
-            IN_Ptr.all := I + 1;
+      Push (I, I.TIB + I.IN_Ptr.all);
+      for J in I.IN_Ptr.all .. I.TIB_Count.all - 1 loop
+         if I.Memory (I.TIB + J) = Char then
+            Push (I, J - I.IN_Ptr.all);
+            I.IN_Ptr.all := J + 1;
             return;
          end if;
       end loop;
-      Push (TIB_Count.all - IN_Ptr.all);
-      IN_Ptr.all := TIB_Count.all;
+      Push (I, I.TIB_Count.all - I.IN_Ptr.all);
+      I.IN_Ptr.all := I.TIB_Count.all;
    end Parse;
 
    ------------------
    -- Parse_Number --
    ------------------
 
-   function Parse_Number (S : String) return Cell
+   function Parse_Number (I : IT; S : String) return Cell
    is
-      B           : constant Unsigned_32 := Unsigned_32 (Base.all);
+      B           : constant Unsigned_32 := Unsigned_32 (I.Base.all);
       Negative    : Boolean := False;
       Sign_Parsed : Boolean := False;
       Result      : Unsigned_32 := 0;
@@ -1166,79 +1321,79 @@ package body Forth.Interpreter is
    -- Parse_Word --
    ----------------
 
-   procedure Parse_Word is
+   procedure Parse_Word (I : IT) is
       Origin : Cell;
    begin
-      Skip_Blanks;
-      Origin := IN_Ptr.all;
-      Push (TIB + Origin);
-      while IN_Ptr.all < TIB_Count.all loop
+      Skip_Blanks (I);
+      Origin := I.IN_Ptr.all;
+      Push (I, I.TIB + Origin);
+      while I.IN_Ptr.all < I.TIB_Count.all loop
          declare
             C : constant Character :=
-              Character'Val (Memory (TIB + IN_Ptr.all));
+              Character'Val (I.Memory (I.TIB + I.IN_Ptr.all));
          begin
-            IN_Ptr.all := IN_Ptr.all + 1;
+            I.IN_Ptr.all := I.IN_Ptr.all + 1;
             if Is_Blank (C) then
-               Push (IN_Ptr.all - Origin - 1);
+               Push (I, I.IN_Ptr.all - Origin - 1);
                return;
             end if;
          end;
       end loop;
-      Push (IN_Ptr.all - Origin);
+      Push (I, I.IN_Ptr.all - Origin);
    end Parse_Word;
 
    ----------------
    -- Patch_Jump --
    ----------------
 
-   procedure Patch_Jump (To_Patch : Cell; Target : Cell) is
-      pragma Assert (To_Patch < Next_Index (Compilation_Buffer));
-      pragma Assert (Target <= Next_Index (Compilation_Buffer));
-      Current : Action_Type := Element (Compilation_Buffer, To_Patch);
+   procedure Patch_Jump (I : IT; To_Patch : Cell; Target : Cell) is
+      pragma Assert (To_Patch < Next_Index (I.Compilation_Buffer));
+      pragma Assert (Target <= Next_Index (I.Compilation_Buffer));
+      Current : Action_Type := Element (I.Compilation_Buffer, To_Patch);
    begin
       Current.Value := Target;
-      Replace_Element (Compilation_Buffer, To_Patch, Current);
+      Replace_Element (I.Compilation_Buffer, To_Patch, Current);
    end Patch_Jump;
 
    ----------
    -- Peek --
    -----------
 
-   function Peek return Cell is
+   function Peek (I : IT) return Cell is
    begin
-      return Peek (Data_Stack);
+      return Peek (I.Data_Stack);
    end Peek;
 
    ----------
    -- Pick --
    ----------
 
-   procedure Pick is
-      How_Deep : constant Integer := Integer (Pop);
+   procedure Pick (I : IT) is
+      How_Deep : constant Integer := Integer (Pop (I));
    begin
-      if How_Deep >= Natural (Length (Data_Stack)) then
+      if How_Deep >= Natural (Length (I.Data_Stack)) then
          raise Stack_Underflow;
       end if;
-      Push (Element (Data_Stack, Length (Data_Stack) - How_Deep));
+      Push (I, Element (I.Data_Stack, Length (I.Data_Stack) - How_Deep));
    end Pick;
 
    ----------
    -- Plus --
    ----------
 
-   procedure Plus is
+   procedure Plus (I : IT) is
    begin
-      Push (Pop + Pop);
+      Push (I, Pop (I) + Pop (I));
    end Plus;
 
    ---------------
    -- Plus_Loop --
    ---------------
 
-   procedure Plus_Loop is
+   procedure Plus_Loop (I : IT) is
       To_Patch : Cell;
    begin
-      Check_Control_Structure (Do_Loop_Reference);
+      Check_Control_Structure (I, Do_Loop_Reference);
 
       --  The standard says: "Add n to the loop index. If the loop
       --  index did not cross the boundary between the loop limit
@@ -1251,28 +1406,29 @@ package body Forth.Interpreter is
       --    dup >r + >r 2dup >r >r >= swap 0< xor
       --    not if [beginning] then unloop
 
-      Add_To_Compilation_Buffer (Dup'Access);
-      Add_To_Compilation_Buffer (From_R'Access);
-      Add_To_Compilation_Buffer (Plus'Access);
-      Add_To_Compilation_Buffer (From_R'Access);
-      Add_To_Compilation_Buffer (Two_Dup'Access);
-      Add_To_Compilation_Buffer (To_R'Access);
-      Add_To_Compilation_Buffer (To_R'Access);
-      Add_To_Compilation_Buffer (Greaterequal'Access);
-      Add_To_Compilation_Buffer (Swap'Access);
-      Add_To_Compilation_Buffer (Negative'Access);
-      Add_To_Compilation_Buffer (Forth_Xor'Access);
-      Add_To_Compilation_Buffer (Pop);
-      Add_To_Compilation_Buffer (Jump_If_False'Access);
-      Add_To_Compilation_Buffer (Unloop'Access);
+      Add_To_Compilation_Buffer (I, Dup'Access);
+      Add_To_Compilation_Buffer (I, From_R'Access);
+      Add_To_Compilation_Buffer (I, Plus'Access);
+      Add_To_Compilation_Buffer (I, From_R'Access);
+      Add_To_Compilation_Buffer (I, Two_Dup'Access);
+      Add_To_Compilation_Buffer (I, To_R'Access);
+      Add_To_Compilation_Buffer (I, To_R'Access);
+      Add_To_Compilation_Buffer (I, Greaterequal'Access);
+      Add_To_Compilation_Buffer (I, Swap'Access);
+      Add_To_Compilation_Buffer (I, Negative'Access);
+      Add_To_Compilation_Buffer (I, Forth_Xor'Access);
+      Add_To_Compilation_Buffer (I, Pop (I));
+      Add_To_Compilation_Buffer (I, Jump_If_False'Access);
+      Add_To_Compilation_Buffer (I, Unloop'Access);
 
       --  Resolve forward references
 
       loop
-         To_Patch := Pop;
+         To_Patch := Pop (I);
          exit when To_Patch = Stack_Marker;
-         Patch_Jump (To_Patch => To_Patch,
-                     Target   => Next_Index (Compilation_Buffer));
+         Patch_Jump (I,
+                     To_Patch => To_Patch,
+                     Target   => Next_Index (I.Compilation_Buffer));
       end loop;
    end Plus_Loop;
 
@@ -1280,58 +1436,58 @@ package body Forth.Interpreter is
    -- Pop --
    ---------
 
-   function Pop return Cell is
+   function Pop (I : IT) return Cell is
    begin
-      return Pop (Data_Stack);
+      return Pop (I.Data_Stack);
    end Pop;
 
    ------------
    -- Pop_64 --
    ------------
 
-   function Pop_64 return Integer_64 is
+   function Pop_64 (I : IT) return Integer_64 is
    begin
-      return To_Integer_64 (Pop_Unsigned_64);
+      return To_Integer_64 (Pop_Unsigned_64 (I));
    end Pop_64;
 
    ------------------
    -- Pop_Unsigned --
    ------------------
 
-   function Pop_Unsigned return Unsigned_32 is
+   function Pop_Unsigned (I : IT) return Unsigned_32 is
    begin
-      return To_Unsigned_32 (Pop);
+      return To_Unsigned_32 (Pop (I));
    end Pop_Unsigned;
 
    ---------------------
    -- Pop_Unsigned_64 --
    ---------------------
 
-   function Pop_Unsigned_64 return Unsigned_64 is
-      High : constant Unsigned_64 := Unsigned_64 (Pop_Unsigned) * 2 ** 32;
+   function Pop_Unsigned_64 (I : IT) return Unsigned_64 is
+      High : constant Unsigned_64 := Unsigned_64 (Pop_Unsigned (I)) * 2 ** 32;
    begin
-      return High + Unsigned_64 (Pop_Unsigned);
+      return High + Unsigned_64 (Pop_Unsigned (I));
    end Pop_Unsigned_64;
 
    --------------
    -- Postpone --
    --------------
 
-   procedure Postpone is
-      W      : constant String := Word;
+   procedure Postpone (I : IT) is
+      W      : constant String := Word (I);
       Action : Action_Type;
    begin
-      Action := Find (W);
+      Action := Find (I, W);
       if Action.Immediate then
-         Add_To_Compilation_Buffer (Action);
+         Add_To_Compilation_Buffer (I, Action);
       else
-         Add_To_Compilation_Buffer (Action.Forth_Proc);
-         Add_To_Compilation_Buffer (Compile_Comma'Access);
+         Add_To_Compilation_Buffer (I, Action.Forth_Proc);
+         Add_To_Compilation_Buffer (I, Compile_Comma'Access);
       end if;
    exception
       when Word_Not_Found =>
          begin
-            Add_To_Compilation_Buffer (Parse_Number (W));
+            Add_To_Compilation_Buffer (I, Parse_Number (I, W));
          exception
             when Constraint_Error =>
                Raise_Word_Not_Found (W);
@@ -1342,21 +1498,21 @@ package body Forth.Interpreter is
    -- Push --
    ----------
 
-   procedure Push (X : Cell) is
+   procedure Push (I : IT; X : Cell) is
    begin
-      Push (Data_Stack, X);
+      Push (I.Data_Stack, X);
    end Push;
 
    ----------
    -- Push --
    ----------
 
-   procedure Push (B : Boolean) is
+   procedure Push (I : IT; B : Boolean) is
    begin
       if B then
-         Push (-1);
+         Push (I, -1);
       else
-         Push (0);
+         Push (I, 0);
       end if;
    end Push;
 
@@ -1364,42 +1520,42 @@ package body Forth.Interpreter is
    -- Push_64 --
    -------------
 
-   procedure Push_64 (X : Integer_64) is
+   procedure Push_64 (I : IT; X : Integer_64) is
    begin
-      Push_Unsigned_64 (To_Unsigned_64 (X));
+      Push_Unsigned_64 (I, To_Unsigned_64 (X));
    end Push_64;
 
    -------------------
    -- Push_Unsigned --
    -------------------
 
-   procedure Push_Unsigned (X : Unsigned_32) is
+   procedure Push_Unsigned (I : IT; X : Unsigned_32) is
    begin
-      Push (To_Cell (X));
+      Push (I, To_Cell (X));
    end Push_Unsigned;
 
    ----------------------
    -- Push_Unsigned_64 --
    ----------------------
 
-   procedure Push_Unsigned_64 (X : Unsigned_64) is
+   procedure Push_Unsigned_64 (I : IT; X : Unsigned_64) is
    begin
-      Push_Unsigned (Unsigned_32 (X mod (2 ** 32)));
-      Push_Unsigned (Unsigned_32 (X / 2 ** 32));
+      Push_Unsigned (I, Unsigned_32 (X mod (2 ** 32)));
+      Push_Unsigned (I, Unsigned_32 (X / 2 ** 32));
    end Push_Unsigned_64;
 
    ----------
    -- Quit --
    ----------
 
-   procedure Quit is
+   procedure Quit (I : IT) is
    begin
       loop
-         Clear (Data_Stack);
-         Clear (Return_Stack);
-         Interpret_Mode;
+         Clear (I.Data_Stack);
+         Clear (I.Return_Stack);
+         Interpret_Mode (I);
          begin
-            Main_Loop;
+            Main_Loop (I);
          exception
             when Bye_Exception =>
                return;
@@ -1427,32 +1583,32 @@ package body Forth.Interpreter is
    -- R_At --
    ----------
 
-   procedure R_At is
+   procedure R_At (I : IT) is
    begin
-      Push (Peek (Return_Stack));
+      Push (I, Peek (I.Return_Stack));
    end R_At;
 
    -------------
    -- Recurse --
    -------------
 
-   procedure Recurse is
+   procedure Recurse (I : IT) is
    begin
-      Add_To_Compilation_Buffer (Current_Action);
+      Add_To_Compilation_Buffer (I, I.Current_Action);
    end Recurse;
 
    ------------
    -- Refill --
    ------------
 
-   procedure Refill is
+   procedure Refill (I : IT) is
    begin
-      if Use_RL then
-         if State.all = 0 then
-            Cr;
-            Refill_Line (Readline.Read_Line ("ok> "));
+      if I.Use_RL then
+         if I.State.all = 0 then
+            Cr (I);
+            Refill_Line (I, Readline.Read_Line ("ok> "));
          else
-            Refill_Line (Readline.Read_Line ("] "));
+            Refill_Line (I, Readline.Read_Line ("] "));
          end if;
       else
          declare
@@ -1460,7 +1616,7 @@ package body Forth.Interpreter is
             Last   : Natural;
          begin
             Get_Line (Buffer, Last);
-            Refill_Line (Buffer (1 .. Last));
+            Refill_Line (I, Buffer (1 .. Last));
          end;
       end if;
    end Refill;
@@ -1469,14 +1625,14 @@ package body Forth.Interpreter is
    -- Refill_Line --
    -----------------
 
-   procedure Refill_Line (Buffer : String) is
+   procedure Refill_Line (I : IT; Buffer : String) is
       Last : constant Natural := Natural'Min (Buffer'Length, TIB_Length);
    begin
-      for I in 1 .. Integer'Min (Buffer'Length, TIB_Length) loop
-         Memory (TIB + Cell (I) - 1) := Character'Pos (Buffer (I));
+      for J in 1 .. Integer'Min (Buffer'Length, TIB_Length) loop
+         I.Memory (I.TIB + Cell (J) - 1) := Character'Pos (Buffer (J));
       end loop;
-      TIB_Count.all := Cell (Last);
-      IN_Ptr.all := 0;
+      I.TIB_Count.all := Cell (Last);
+      I.IN_Ptr.all := 0;
    end Refill_Line;
 
    --------------
@@ -1484,12 +1640,13 @@ package body Forth.Interpreter is
    --------------
 
    procedure Register
-     (Name   : String;
+     (I      : IT;
+      Name   : String;
       Action : Action_Type)
    is
    begin
-      Append (Dict, (Name   => To_Unbounded_String (Name),
-                     Action => Action));
+      Append (I.Dict, (Name   => To_Unbounded_String (Name),
+                       Action => Action));
       Readline.Add_Word (Name);
    end Register;
 
@@ -1498,7 +1655,8 @@ package body Forth.Interpreter is
    -----------------------
 
    procedure Register_Ada_Word
-     (Name      : String;
+     (I         : IT;
+      Name      : String;
       Word      : Ada_Word_Access;
       Immediate : Boolean := False)
    is
@@ -1506,13 +1664,13 @@ package body Forth.Interpreter is
       --  Create a Forth wrapper around an Ada word so that its address
       --  can be taken and passed to EXECUTE.
 
-      Start_Definition (Name);
-      Add_To_Compilation_Buffer (Word);
-      Semicolon;
+      Start_Definition (I, Name);
+      Add_To_Compilation_Buffer (I, Word);
+      Semicolon (I);
       if Immediate then
-         Set_Immediate;
+         Set_Immediate (I);
       end if;
-      Set_Inline;
+      Set_Inline (I);
    end Register_Ada_Word;
 
    -----------------------
@@ -1520,13 +1678,14 @@ package body Forth.Interpreter is
    -----------------------
 
    procedure Register_Constant
-     (Name  : String;
+     (I     : IT;
+      Name  : String;
       Value : Cell)
    is
    begin
-      Start_Definition (Name);
-      Add_To_Compilation_Buffer (Value);
-      Semicolon;
+      Start_Definition (I, Name);
+      Add_To_Compilation_Buffer (I, Value);
+      Semicolon (I);
    end Register_Constant;
 
    -----------------------
@@ -1534,13 +1693,14 @@ package body Forth.Interpreter is
    -----------------------
 
    procedure Remember_Variable
-     (Name : String;
+     (I    : IT;
+      Name : String;
       Var  : out Cell_Access)
    is
    begin
-      Tick (Name);
-      To_Body;
-      Var := To_Cell_Access (Memory (Pop) 'Access);
+      Tick (I, Name);
+      To_Body (I);
+      Var := To_Cell_Access (I.Memory (Pop (I)) 'Access);
    end Remember_Variable;
 
    -----------------------
@@ -1548,30 +1708,31 @@ package body Forth.Interpreter is
    -----------------------
 
    procedure Remember_Variable
-     (Name : String;
+     (I    : IT;
+      Name : String;
       Var  : out Cell)
    is
    begin
-      Tick (Name);
-      To_Body;
-      Var := Pop;
+      Tick (I, Name);
+      To_Body (I);
+      Var := Pop (I);
    end Remember_Variable;
 
    ------------
    -- Repeat --
    ------------
 
-   procedure Repeat is
+   procedure Repeat (I : IT) is
    begin
-      Check_Control_Structure (Backward_Reference);
-      Literal;
-      Add_To_Compilation_Buffer (Jump'Access);
+      Check_Control_Structure (I, Backward_Reference);
+      Literal (I);
+      Add_To_Compilation_Buffer (I, Jump'Access);
       loop
          declare
-            To_Fix : constant Cell := Pop;
+            To_Fix : constant Cell := Pop (I);
          begin
             exit when To_Fix = Stack_Marker;
-            Patch_Jump (To_Fix, Next_Index (Compilation_Buffer));
+            Patch_Jump (I, To_Fix, Next_Index (I.Compilation_Buffer));
          end;
       end loop;
    end Repeat;
@@ -1580,60 +1741,60 @@ package body Forth.Interpreter is
    -- Roll --
    ----------
 
-   procedure Roll is
-      Offset : constant Integer  := Integer (Pop);
-      Index  : constant Positive := Length (Data_Stack) - Offset;
+   procedure Roll (I : IT) is
+      Offset : constant Integer  := Integer (Pop (I));
+      Index  : constant Positive := Length (I.Data_Stack) - Offset;
    begin
-      Push (Data_Stack, Element (Data_Stack, Index));
-      Delete (Data_Stack, Index);
+      Push (I.Data_Stack, Element (I.Data_Stack, Index));
+      Delete (I.Data_Stack, Index);
    end Roll;
 
    ------------
    -- Rshift --
    ------------
 
-   procedure Rshift is
-      U : constant Natural := Natural (Pop_Unsigned);
+   procedure Rshift (I : IT) is
+      U : constant Natural := Natural (Pop_Unsigned (I));
    begin
-      Push_Unsigned (Pop_Unsigned / 2 ** U);
+      Push_Unsigned (I, Pop_Unsigned (I) / 2 ** U);
    end Rshift;
 
    ------------
    -- S_To_D --
    ------------
 
-   procedure S_To_D is
+   procedure S_To_D (I : IT) is
    begin
-      Push_64 (Integer_64 (Pop));
+      Push_64 (I, Integer_64 (Pop (I)));
    end S_To_D;
 
    --------------
    -- ScaleMod --
    --------------
 
-   procedure ScaleMod is
+   procedure ScaleMod (I : IT) is
    begin
-      To_R;
-      Mstar;
-      From_R;
-      Sm_Slash_Rem;
+      To_R (I);
+      Mstar (I);
+      From_R (I);
+      Sm_Slash_Rem (I);
    end ScaleMod;
 
    ---------
    -- See --
    ---------
 
-   procedure See is
+   procedure See (I : IT) is
       Index  : Cell;
       Action : Action_Type;
       Found  : Boolean;
    begin
-      Tick;
-      Index := Pop;
+      Tick (I);
+      Index := Pop (I);
       loop
          Found := False;
          Put (Cell'Image (Index) & ": ");
-         Action := Element (Compilation_Buffer, Index);
+         Action := Element (I.Compilation_Buffer, Index);
          if Action = Forth_Exit then
             Put_Line ("EXIT");
             exit;
@@ -1651,9 +1812,10 @@ package body Forth.Interpreter is
                   end if;
                end;
             when Forth_Word =>
-               for I in reverse First_Index (Dict) .. Last_Index (Dict) loop
+               for J in
+                 reverse First_Index (I.Dict) .. Last_Index (I.Dict) loop
                   declare
-                     Current : Dictionary_Entry renames Element (Dict, I);
+                     Current : Dictionary_Entry renames Element (I.Dict, J);
                   begin
                      if Current.Action.Kind = Forth_Word and then
                        Current.Action.Forth_Proc = Action.Forth_Proc
@@ -1675,20 +1837,21 @@ package body Forth.Interpreter is
                   Found := True;
                   Put_Line ("<DO DOES>");
                else
-                  for I in reverse First_Index (Dict) .. Last_Index (Dict) loop
+                  for J in
+                    reverse First_Index (I.Dict) .. Last_Index (I.Dict) loop
                      declare
-                        Current : Dictionary_Entry renames Element (Dict, I);
+                        Current : Dictionary_Entry renames Element (I.Dict, J);
                      begin
                         if Current.Action.Kind = Forth_Word then
                            declare
                               Idx : constant Cell :=
                                 Current.Action.Forth_Proc;
                               A : constant Action_Type :=
-                                Element (Compilation_Buffer, Idx);
+                                Element (I.Compilation_Buffer, Idx);
                            begin
                               if A.Kind = Ada_Word and then
                                 A.Ada_Proc = Action.Ada_Proc and then
-                                Element (Compilation_Buffer, Idx + 1) =
+                                Element (I.Compilation_Buffer, Idx + 1) =
                                   Forth_Exit
                               then
                                  Found := True;
@@ -1713,53 +1876,54 @@ package body Forth.Interpreter is
    -- Semicolon --
    ---------------
 
-   procedure Semicolon is
+   procedure Semicolon (I : IT) is
    begin
-      Check_Control_Structure (Definition_Reference);
-      Add_To_Compilation_Buffer (Forth_Exit);
+      Check_Control_Structure (I, Definition_Reference);
+      Add_To_Compilation_Buffer (I, Forth_Exit);
 
       --  Current_Name can be null during definition or completion of
       --  a DOES> prefix.
 
-      if Current_Name /= "" then
-         Register (To_String (Current_Name), Current_Action);
-         Current_Name := To_Unbounded_String ("");
+      if I.Current_Name /= "" then
+         Register (I, To_String (I.Current_Name), I.Current_Action);
+         I.Current_Name := To_Unbounded_String ("");
       end if;
 
-      Interpret_Mode;
+      Interpret_Mode (I);
    end Semicolon;
 
    -------------------
    -- Set_Immediate --
    -------------------
 
-   procedure Set_Immediate is
-      Current : Dictionary_Entry := Last_Element (Dict);
+   procedure Set_Immediate (I : IT) is
+      Current : Dictionary_Entry := Last_Element (I.Dict);
    begin
       Current.Action.Immediate := True;
-      Replace_Element (Dict, Last_Index (Dict), Current);
+      Replace_Element (I.Dict, Last_Index (I.Dict), Current);
    end Set_Immediate;
 
    ----------------
    -- Set_Inline --
    ----------------
 
-   procedure Set_Inline is
-      Current : Dictionary_Entry := Last_Element (Dict);
+   procedure Set_Inline (I : IT) is
+      Current : Dictionary_Entry := Last_Element (I.Dict);
    begin
       Current.Action.Inline := True;
-      Replace_Element (Dict, Last_Index (Dict), Current);
+      Replace_Element (I.Dict, Last_Index (I.Dict), Current);
    end Set_Inline;
 
    -----------------
    -- Skip_Blanks --
    -----------------
 
-   procedure Skip_Blanks is
+   procedure Skip_Blanks (I : IT) is
    begin
-      while IN_Ptr.all < TIB_Count.all loop
-         exit when not Is_Blank (Character'Val (Memory (TIB + IN_Ptr.all)));
-         IN_Ptr.all := IN_Ptr.all + 1;
+      while I.IN_Ptr.all < I.TIB_Count.all loop
+         exit when
+           not Is_Blank (Character'Val (I.Memory (I.TIB + I.IN_Ptr.all)));
+         I.IN_Ptr.all := I.IN_Ptr.all + 1;
       end loop;
    end Skip_Blanks;
 
@@ -1767,123 +1931,124 @@ package body Forth.Interpreter is
    -- Sm_Slash_Rem --
    ------------------
 
-   procedure Sm_Slash_Rem is
-      N : constant Integer_64 := Integer_64 (Pop);
-      D : constant Integer_64 := Pop_64;
+   procedure Sm_Slash_Rem (I : IT) is
+      N : constant Integer_64 := Integer_64 (Pop (I));
+      D : constant Integer_64 := Pop_64 (I);
       R : constant Integer_64 := D rem N;
    begin
-      Push (Cell (R));
-      Push_64 ((D - R) / N);
-      Drop;
+      Push (I, Cell (R));
+      Push_64 (I, (D - R) / N);
+      Drop (I);
    end Sm_Slash_Rem;
 
    ----------------------
    -- Start_Definition --
    ----------------------
 
-   procedure Start_Definition (Name : String := "") is
+   procedure Start_Definition (I : IT; Name : String := "") is
    begin
       if Name /= "" then
-         Current_Name := To_Unbounded_String (Name);
+         I.Current_Name := To_Unbounded_String (Name);
       end if;
-      Current_Action.Immediate  := False;
-      Current_Action.Forth_Proc := Next_Index (Compilation_Buffer);
-      Compile_Mode;
-      Push (Definition_Reference);
+      I.Current_Action.Immediate  := False;
+      I.Current_Action.Forth_Proc := Next_Index (I.Compilation_Buffer);
+      Compile_Mode (I);
+      Push (I, Definition_Reference);
    end Start_Definition;
 
    -----------
    -- Store --
    -----------
 
-   procedure Store
+   procedure Store (I : IT)
    is
-      Addr  : constant Cell_Access := To_Cell_Access (Memory (Pop)'Access);
+      Addr  : constant Cell_Access :=
+        To_Cell_Access (I.Memory (Pop (I))'Access);
    begin
-      Addr.all := Pop;
+      Addr.all := Pop (I);
    end Store;
 
    -----------
    -- Store --
    -----------
 
-   procedure Store (Addr : Cell; Value : Cell) is
+   procedure Store (I : IT; Addr : Cell; Value : Cell) is
    begin
-      Push (Value);
-      Push (Addr);
-      Store;
+      Push (I, Value);
+      Push (I, Addr);
+      Store (I);
    end Store;
 
    ----------
    -- Swap --
    ----------
 
-   procedure Swap
+   procedure Swap (I : IT)
    is
-      A : constant Cell := Pop;
-      B : constant Cell := Pop;
+      A : constant Cell := Pop (I);
+      B : constant Cell := Pop (I);
    begin
-      Push (A);
-      Push (B);
+      Push (I, A);
+      Push (I, B);
    end Swap;
 
    ----------
    -- Tick --
    ----------
 
-   procedure Tick (Name : String) is
-      A : constant Action_Type := Find (Name);
+   procedure Tick (I : IT; Name : String) is
+      A : constant Action_Type := Find (I, Name);
    begin
-      Push (A.Forth_Proc);
+      Push (I, A.Forth_Proc);
    end Tick;
 
    ----------
    -- Tick --
    ----------
 
-   procedure Tick is
+   procedure Tick (I : IT) is
    begin
-      Tick (Word);
+      Tick (I, Word (I));
    end Tick;
 
    -----------
    -- Times --
    -----------
 
-   procedure Times is
+   procedure Times (I : IT) is
    begin
-      Push (Pop * Pop);
+      Push (I, Pop (I) * Pop (I));
    end Times;
 
    -------------
    -- To_Body --
    -------------
 
-   procedure To_Body is
+   procedure To_Body (I : IT) is
    begin
-      Push (Element (Compilation_Buffer, Pop) .Value);
+      Push (I, Element (I.Compilation_Buffer, Pop (I)) .Value);
    end To_Body;
 
    ----------
    -- To_R --
    ----------
 
-   procedure To_R is
+   procedure To_R (I : IT) is
    begin
-      Push (Return_Stack, Pop);
+      Push (I.Return_Stack, Pop (I));
    end To_R;
 
    ---------------
    -- To_String --
    ---------------
 
-   function To_String return String is
-      Length : constant Natural    := Natural (Pop);
-      Addr   : Cell          := Pop;
+   function To_String (I : IT) return String is
+      Length : constant Natural    := Natural (Pop (I));
+      Addr   : Cell          := Pop (I);
       Result : String (1 .. Length);
    begin
-      for I in Result'Range loop
-         Result (I) := Character'Val (Cfetch (Addr));
+      for J in Result'Range loop
+         Result (J) := Character'Val (Cfetch (I, Addr));
          Addr := Addr + 1;
       end loop;
       return Result;
@@ -1893,144 +2058,144 @@ package body Forth.Interpreter is
    -- Two_Div --
    -------------
 
-   procedure Two_Div is
-      A : constant Cell := Pop;
+   procedure Two_Div (I : IT) is
+      A : constant Cell := Pop (I);
       B : Unsigned_32   := To_Unsigned_32 (A) / 2;
    begin
       if A < 0 then
          B := B or (2 ** 31);
       end if;
-      Push_Unsigned (B);
+      Push_Unsigned (I, B);
    end Two_Div;
 
    -------------
    -- Two_Dup --
    -------------
 
-   procedure Two_Dup is
-      A : constant Cell := Pop;
-      B : constant Cell := Pop;
+   procedure Two_Dup (I : IT) is
+      A : constant Cell := Pop (I);
+      B : constant Cell := Pop (I);
    begin
-      Push (B);
-      Push (A);
-      Push (B);
-      Push (A);
+      Push (I, B);
+      Push (I, A);
+      Push (I, B);
+      Push (I, A);
    end Two_Dup;
 
    --------------
    -- Two_R_At --
    --------------
 
-   procedure Two_R_At is
+   procedure Two_R_At (I : IT) is
    begin
-      Push (Element (Return_Stack, Length (Return_Stack) - 1));
-      Push (Peek (Return_Stack));
+      Push (I, Element (I.Return_Stack, Length (I.Return_Stack) - 1));
+      Push (I, Peek (I.Return_Stack));
    end Two_R_At;
 
    --------------
    -- Two_To_R --
    --------------
 
-   procedure Two_To_R is
+   procedure Two_To_R (I : IT) is
    begin
-      Swap;
-      To_R;
-      To_R;
+      Swap (I);
+      To_R (I);
+      To_R (I);
    end Two_To_R;
 
    ---------------
    -- U_Smaller --
    ---------------
 
-   procedure U_Smaller is
-      R : constant Unsigned_32 := Pop_Unsigned;
+   procedure U_Smaller (I : IT) is
+      R : constant Unsigned_32 := Pop_Unsigned (I);
    begin
-      Push (Pop_Unsigned < R);
+      Push (I, Pop_Unsigned (I) < R);
    end U_Smaller;
 
    ------------------
    -- Um_Slash_Mod --
    ------------------
 
-   procedure Um_Slash_Mod is
-      N : constant Unsigned_64 := Unsigned_64 (Pop_Unsigned);
-      D : constant Unsigned_64 := Pop_Unsigned_64;
+   procedure Um_Slash_Mod (I : IT) is
+      N : constant Unsigned_64 := Unsigned_64 (Pop_Unsigned (I));
+      D : constant Unsigned_64 := Pop_Unsigned_64 (I);
    begin
-      Push_Unsigned (Unsigned_32 (D mod N));
-      Push_Unsigned_64 (D / N);
-      Drop;
+      Push_Unsigned (I, Unsigned_32 (D mod N));
+      Push_Unsigned_64 (I, D / N);
+      Drop (I);
    end Um_Slash_Mod;
 
    -------------
    -- Um_Star --
    -------------
 
-   procedure Um_Star is
+   procedure Um_Star (I : IT) is
    begin
-      Push_Unsigned_64 (Unsigned_64 (Pop_Unsigned) *
-                        Unsigned_64 (Pop_Unsigned));
+      Push_Unsigned_64 (I, Unsigned_64 (Pop_Unsigned (I)) *
+                          Unsigned_64 (Pop_Unsigned (I)));
    end Um_Star;
 
    ------------
    -- Unloop --
    ------------
 
-   procedure Unloop is
+   procedure Unloop (I : IT) is
    begin
-      Delete_Last (Return_Stack);
-      Delete_Last (Return_Stack);
+      Delete_Last (I.Return_Stack);
+      Delete_Last (I.Return_Stack);
    end Unloop;
 
    ------------
    -- Unused --
    ------------
 
-   procedure Unused is
+   procedure Unused (I : IT) is
    begin
-      Push (Memory'Last - Here.all + 1);
+      Push (I, I.Memory'Last - I.Here.all + 1);
    end Unused;
 
    ----------
    -- Word --
    ----------
 
-   procedure Word is
+   procedure Word (I : IT) is
       Length : Cell;
       Addr   : Cell;
    begin
-      Parse;
-      Length := Pop;
-      Addr   := Pop;
-      Memory (Addr - 1) := Unsigned_8 (Length);
-      Push (Addr - 1);
+      Parse (I);
+      Length := Pop (I);
+      Addr   := Pop (I);
+      I.Memory (Addr - 1) := Unsigned_8 (Length);
+      Push (I, Addr - 1);
    end Word;
 
    ----------
    -- Word --
    ----------
 
-   function Word return String is
+   function Word (I : IT) return String is
    begin
-      Parse_Word;
-      return To_String;
+      Parse_Word (I);
+      return To_String (I);
    end Word;
 
    -----------
    -- Words --
    -----------
 
-   procedure Words is
+   procedure Words (I : IT) is
       Len : Natural := 0;
    begin
-      for I in First_Index (Dict) .. Last_Index (Dict) loop
+      for J in First_Index (I.Dict) .. Last_Index (I.Dict) loop
          declare
-            Current : Dictionary_Entry renames Element (Dict, I);
+            Current : Dictionary_Entry renames Element (I.Dict, J);
          begin
             Len := Len + Length (Current.Name) + 1;
             if Len > 75 then
                New_Line;
                Len := Length (Current.Name);
-            elsif I /= First_Index (Dict) then
+            elsif J /= First_Index (I.Dict) then
                Put (' ');
             end if;
             Put (To_String (Current.Name));
@@ -2038,119 +2203,4 @@ package body Forth.Interpreter is
       end loop;
    end Words;
 
-begin
-   --  Store and register HERE at position 0 -- bootstrap STATE at position 4
-   State := To_Cell_Access (Memory (4)'Access);
-   Store (0, 4);
-   Start_Definition ("(HERE)");
-   Add_To_Compilation_Buffer (0);
-   Semicolon;
-   Remember_Variable ("(HERE)", Here);
-   Make_And_Remember_Variable ("STATE", State);
-
-   --  Default existing variables
-   Make_And_Remember_Variable ("BASE", Base, Initial_Value => 10);
-   Make_And_Remember_Variable ("TIB", TIB, Size => 1024);
-   Make_And_Remember_Variable ("TIB#", TIB_Count);
-   Make_And_Remember_Variable (">IN", IN_Ptr);
-
-   --  Default Ada words
-   Register_Ada_Word ("AGAIN", Again'Access, Immediate => True);
-   Register_Ada_Word ("AHEAD", Ahead'Access, Immediate => True);
-   Register_Ada_Word ("ALIGN", Align'Access);
-   Register_Ada_Word ("BYE", Bye'Access);
-   Register_Ada_Word ("C@", Cfetch'Access);
-   Register_Ada_Word ("COMPILE,", Compile_Comma'Access);
-   Register_Ada_Word ("COUNT", Count'Access);
-   Register_Ada_Word ("C!", Cstore'Access);
-   Register_Ada_Word (":", Colon'Access);
-   Register_Ada_Word (":NONAME", Colon_Noname'Access);
-   Register_Ada_Word ("]", Compile_Mode'Access);
-   Register_Ada_Word ("CR", Cr'Access);
-   Register_Ada_Word ("DABS", D_Abs'Access);
-   Register_Ada_Word ("D=", D_Equal'Access);
-   Register_Ada_Word ("DMAX", D_Max'Access);
-   Register_Ada_Word ("DMIN", D_Min'Access);
-   Register_Ada_Word ("D-", D_Minus'Access);
-   Register_Ada_Word ("D+", D_Plus'Access);
-   Register_Ada_Word ("D<", D_Smaller'Access);
-   Register_Ada_Word ("D2/", D_Two_Div'Access);
-   Register_Ada_Word ("D2*", D_Two_Times'Access);
-   Register_Ada_Word ("DEPTH", Depth'Access);
-   Register_Ada_Word ("/MOD", DivMod'Access);
-   Register_Ada_Word ("DOES>", Does'Access, Immediate => True);
-   Register_Ada_Word ("DROP", Drop'Access);
-   Register_Ada_Word ("DUP", Dup'Access);
-   Register_Ada_Word ("EMIT", Emit'Access);
-   Register_Ada_Word ("=", Equal'Access);
-   Register_Ada_Word ("EVALUATE", Evaluate'Access);
-   Register_Ada_Word ("EXECUTE", Execute'Access);
-   Register_Ada_Word ("@", Fetch'Access);
-   Register_Ada_Word ("FIND", Find'Access);
-   Register_Ada_Word ("FM/MOD", Fm_Slash_Mod'Access);
-   Register_Ada_Word ("AND", Forth_And'Access);
-   Register_Ada_Word ("BEGIN", Forth_Begin'Access, Immediate => True);
-   Register_Ada_Word ("DO", Forth_Do'Access, Immediate => True);
-   Register_Ada_Word ("EXIT", Compile_Exit'Access, Immediate => True);
-   Register_Ada_Word ("IF", Forth_If'Access, Immediate => True);
-   Register_Ada_Word ("OR", Forth_Or'Access);
-   Register_Ada_Word ("THEN", Forth_Then'Access, Immediate => True);
-   Register_Ada_Word ("WHILE", Forth_While'Access, Immediate => True);
-   Register_Ada_Word ("XOR", Forth_Xor'Access);
-   Register_Ada_Word ("R>", From_R'Access);
-   Register_Ada_Word (">=", Greaterequal'Access);
-   Register_Ada_Word ("J", J'Access);
-   Register_Ada_Word ("INCLUDE", Include'Access);
-   Register_Ada_Word ("[", Interpret_Mode'Access, Immediate => True);
-   Register_Ada_Word ("LEAVE", Leave'Access, Immediate => True);
-   Register_Ada_Word ("LITERAL", Literal'Access, Immediate => True);
-   Register_Ada_Word ("LSHIFT", Lshift'Access);
-   Register_Ada_Word ("KEY", Key'Access);
-   Register_Ada_Word ("MS", MS'Access);
-   Register_Ada_Word ("M*", Mstar'Access);
-   Register_Ada_Word ("0<", Negative'Access);
-   Register_Ada_Word ("PARSE", Parse'Access);
-   Register_Ada_Word ("PARSE-WORD", Parse_Word'Access);
-   Register_Ada_Word ("PICK", Pick'Access);
-   Register_Ada_Word ("+", Plus'Access);
-   Register_Ada_Word ("+LOOP", Plus_Loop'Access, Immediate => True);
-   Register_Ada_Word ("POSTPONE", Postpone'Access, Immediate => True);
-   Register_Ada_Word ("QUIT", Quit'Access);
-   Register_Ada_Word ("R@", R_At'Access);
-   Register_Ada_Word ("RECURSE", Recurse'Access, Immediate => True);
-   Register_Ada_Word ("REFILL", Refill'Access);
-   Register_Ada_Word ("REPEAT", Repeat'Access, Immediate => True);
-   Register_Ada_Word ("ROLL", Roll'Access);
-   Register_Ada_Word ("RSHIFT", Rshift'Access);
-   Register_Ada_Word ("S>D", S_To_D'Access);
-   Register_Ada_Word ("*/MOD", ScaleMod'Access);
-   Register_Ada_Word ("SEE", See'Access);
-   Register_Ada_Word (";", Semicolon'Access, Immediate => True);
-   Register_Ada_Word ("IMMEDIATE", Set_Immediate'Access);
-   Register_Ada_Word ("INLINE", Set_Inline'Access);
-   Register_Ada_Word ("SKIP-BLANKS", Skip_Blanks'Access);
-   Register_Ada_Word ("SM/REM", Sm_Slash_Rem'Access);
-   Register_Ada_Word ("SWAP", Swap'Access);
-   Register_Ada_Word ("!", Store'Access);
-   Register_Ada_Word ("'", Tick'Access);
-   Register_Ada_Word ("*", Times'Access);
-   Register_Ada_Word (">BODY", To_Body'Access);
-   Register_Ada_Word (">R", To_R'Access);
-   Register_Ada_Word ("2/", Two_Div'Access);
-   Register_Ada_Word ("2DUP", Two_Dup'Access);
-   Register_Ada_Word ("2R@", Two_R_At'Access);
-   Register_Ada_Word ("2>R", Two_To_R'Access);
-   Register_Ada_Word ("U<", U_Smaller'Access);
-   Register_Ada_Word ("UM/MOD", Um_Slash_Mod'Access);
-   Register_Ada_Word ("UM*", Um_Star'Access);
-   Register_Ada_Word ("UNLOOP", Unloop'Access);
-   Register_Ada_Word ("UNUSED", Unused'Access);
-   Register_Ada_Word ("WORD", Word'Access);
-   Register_Ada_Word ("WORDS", Words'Access);
-
-   for I in Forth_Builtins.Builtins'Range loop
-      Interpret_Line (Forth_Builtins.Builtins (I) .all);
-   end loop;
-
-   Readline.Variable_Bind ("completion-ignore-case", "on");
 end Forth.Interpreter;
