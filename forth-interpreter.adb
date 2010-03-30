@@ -6,6 +6,7 @@ with Ada.Strings.Unbounded;      use Ada.Strings.Unbounded;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with Forth_Builtins;
+with Forth.Stacks;               use Forth.Stacks;
 with Readline;
 
 package body Forth.Interpreter is
@@ -86,14 +87,8 @@ package body Forth.Interpreter is
    package Stacks is
       new Ada.Containers.Vectors (Positive, Cell);
    use Stacks;
-   Data_Stack   : aliased Stacks.Vector;
-   Return_Stack : aliased Stacks.Vector;
-
-   procedure Push (S : in out Stacks.Vector; X : Cell);
-   --  May raise stack overflow
-
-   function Pop (S : not null access Stacks.Vector) return Cell;
-   --  May raise stack underflow
+   Data_Stack   : constant Stack_Type := New_Stack;
+   Return_Stack : constant Stack_Type := New_Stack;
 
    Here      : Cell_Access;
    Base      : Cell_Access;
@@ -552,10 +547,7 @@ package body Forth.Interpreter is
 
    procedure Dup is
    begin
-      if Is_Empty (Data_Stack) then
-         raise Stack_Underflow;
-      end if;
-      Push (Last_Element (Data_Stack));
+      Push (Peek (Data_Stack));
    end Dup;
 
    ----------
@@ -625,7 +617,7 @@ package body Forth.Interpreter is
          begin
             Current_IP := Current_IP + 1;
             if Current_Action = Forth_Exit then
-               Current_IP := Pop (Return_Stack'Access);
+               Current_IP := Pop (Return_Stack);
                return;
             end if;
             Execute_Action (Current_Action);
@@ -829,7 +821,7 @@ package body Forth.Interpreter is
 
    procedure From_R is
    begin
-      Push (Pop (Return_Stack'Access));
+      Push (Pop (Return_Stack));
    end From_R;
 
    ------------------
@@ -990,10 +982,10 @@ package body Forth.Interpreter is
 
    procedure J is
    begin
-      if Natural (Length (Return_Stack)) < 3 then
+      if Length (Return_Stack) < 3 then
          raise Stack_Underflow;
       end if;
-      Push (Element (Return_Stack, Last_Index (Return_Stack) - 2));
+      Push (Element (Return_Stack, Length (Return_Stack) - 2));
    end J;
 
    ----------
@@ -1036,7 +1028,7 @@ package body Forth.Interpreter is
    begin
       --  Look for Do_Loop_Reference on the stack
 
-      for I in reverse First_Index (Data_Stack) .. Last_Index (Data_Stack) loop
+      for I in reverse 1 .. Length (Data_Stack) loop
          if Element (Data_Stack, I) = Do_Loop_Reference then
 
             --  Insert the leave information at the proper place
@@ -1287,10 +1279,7 @@ package body Forth.Interpreter is
 
    function Peek return Cell is
    begin
-      if Is_Empty (Data_Stack) then
-         raise Stack_Underflow;
-      end if;
-      return Last_Element (Data_Stack);
+      return Peek (Data_Stack);
    end Peek;
 
    ----------
@@ -1303,7 +1292,7 @@ package body Forth.Interpreter is
       if How_Deep >= Natural (Length (Data_Stack)) then
          raise Stack_Underflow;
       end if;
-      Push (Element (Data_Stack, Last_Index (Data_Stack) - How_Deep));
+      Push (Element (Data_Stack, Length (Data_Stack) - How_Deep));
    end Pick;
 
    ----------
@@ -1364,24 +1353,9 @@ package body Forth.Interpreter is
    -- Pop --
    ---------
 
-   function Pop (S : not null access Stacks.Vector) return Cell is
-      Result : Cell;
-   begin
-      if Is_Empty (S.all) then
-         raise Stack_Underflow;
-      end if;
-      Result := Last_Element (S.all);
-      Delete_Last (S.all);
-      return Result;
-   end Pop;
-
-   ---------
-   -- Pop --
-   ---------
-
    function Pop return Cell is
    begin
-      return Pop (Data_Stack'Access);
+      return Pop (Data_Stack);
    end Pop;
 
    ------------
@@ -1436,15 +1410,6 @@ package body Forth.Interpreter is
                Raise_Word_Not_Found (W);
          end;
    end Postpone;
-
-   ----------
-   -- Push --
-   ----------
-
-   procedure Push (S : in out Stacks.Vector; X : Cell) is
-   begin
-      Append (S, X);
-   end Push;
 
    ----------
    -- Push --
@@ -1515,8 +1480,6 @@ package body Forth.Interpreter is
                return;
             when NF : Word_Not_Found =>
                Put_Line ("*** Word not found: " & Exception_Message (NF));
-            when Stack_Overflow =>
-               Put_Line ("*** Stack overflow");
             when Stack_Underflow =>
                Put_Line ("*** Stack underflow");
             when CO : Compile_Only =>
@@ -1539,7 +1502,7 @@ package body Forth.Interpreter is
 
    procedure R_At is
    begin
-      Push (Last_Element (Return_Stack));
+      Push (Peek (Return_Stack));
    end R_At;
 
    --------------------------
@@ -1701,9 +1664,9 @@ package body Forth.Interpreter is
 
    procedure Roll is
       Offset : constant Integer  := Integer (Pop);
-      Index  : constant Positive := Last_Index (Data_Stack) - Offset;
+      Index  : constant Positive := Length (Data_Stack) - Offset;
    begin
-      Append (Data_Stack, Element (Data_Stack, Index));
+      Push (Data_Stack, Element (Data_Stack, Index));
       Delete (Data_Stack, Index);
    end Roll;
 
@@ -2042,8 +2005,8 @@ package body Forth.Interpreter is
 
    procedure Two_R_At is
    begin
-      Push (Element (Return_Stack, Last_Index (Return_Stack) - 1));
-      Push (Last_Element (Return_Stack));
+      Push (Element (Return_Stack, Length (Return_Stack) - 1));
+      Push (Peek (Return_Stack));
    end Two_R_At;
 
    --------------
