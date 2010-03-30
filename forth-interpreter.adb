@@ -3,7 +3,7 @@ with Ada.Exceptions;             use Ada.Exceptions;
 with Ada.Real_Time;              use Ada.Real_Time;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
-with Forth_Builtins;
+with Forth.Builtins;
 with Readline;
 
 package body Forth.Interpreter is
@@ -945,8 +945,8 @@ package body Forth.Interpreter is
       Register_Ada_Word (I, "WORD", Word'Access);
       Register_Ada_Word (I, "WORDS", Words'Access);
 
-      for J in Forth_Builtins.Builtins'Range loop
-         Interpret_Line (I, Forth_Builtins.Builtins (J) .all);
+      for J in Forth.Builtins.Builtins'Range loop
+         Interpret_Line (I, Forth.Builtins.Builtins (J) .all);
       end loop;
 
       Readline.Variable_Bind ("completion-ignore-case", "on");

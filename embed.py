@@ -11,7 +11,7 @@ except IndexError: ada = sys.argv[1][:-3].capitalize()
 adafile = ada.lower().replace('.', '-')
 
 outspec = open("%s.ads" % adafile, "w")
-outspec.write('''package %s is
+outspec.write('''private package %s is
 
    pragma Preelaborate;
 

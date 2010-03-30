@@ -12,15 +12,15 @@ install:: $(PROGRAMS)
 %.ads %.adb: %.fs
 	$(PYTHON) embed.py $<
 
-forth_builtins.ads: builtins.fs embed.py
-	$(PYTHON) embed.py $< Forth_Builtins
+forth-builtins.ads: builtins.fs embed.py
+	$(PYTHON) embed.py $< Forth.Builtins
 
-test_aforth: never forth_builtins.ads
+test_aforth: never forth-builtins.ads
 	$(GNATMAKE) $(GNATCFLAGS) -Paforth
 
 clean:: never
 	$(RM) *.o *.ali *~ b~*.ad? $(PROGRAMS) \
-	  forth_builtins.ads forth_builtins.adb
+	  forth-builtins.ads forth-builtins.adb
 
 never::
 
