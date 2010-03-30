@@ -31,13 +31,11 @@ package body Forth.Interpreter is
    procedure Register (Name   : String;
                        Action : Action_Type);
 
-   Not_Found     : exception;
-
-   procedure Raise_Not_Found (Word : String);
-   pragma No_Return (Raise_Not_Found);
+   procedure Raise_Word_Not_Found (Word : String);
+   pragma No_Return (Raise_Word_Not_Found);
 
    function Find (Name : String) return Action_Type;
-   --  May raise Not_Found
+   --  May raise Word_Not_Found
 
    subtype Natural_Cell is Cell range 1 .. Cell'Last;
    package Compilation_Buffers is
@@ -673,7 +671,7 @@ package body Forth.Interpreter is
          Push (-1);
       end if;
    exception
-      when Not_Found =>
+      when Word_Not_Found =>
          Push (C);
          Push (0);
    end Find;
@@ -696,7 +694,7 @@ package body Forth.Interpreter is
             end if;
          end;
       end loop;
-      Raise_Not_Found (Name);
+      Raise_Word_Not_Found (Name);
    end Find;
 
    ------------------
@@ -924,7 +922,7 @@ package body Forth.Interpreter is
                   A.Immediate := True;
                   Execute_Action (A);
                exception
-                  when NF : Not_Found =>
+                  when NF : Word_Not_Found =>
                      begin
                         I := Parse_Number (W);
                      exception
@@ -944,7 +942,7 @@ package body Forth.Interpreter is
                      Add_To_Compilation_Buffer (A);
                   end if;
                exception
-                  when NF : Not_Found =>
+                  when NF : Word_Not_Found =>
                      begin
                         I := Parse_Number (W);
                      exception
@@ -1430,12 +1428,12 @@ package body Forth.Interpreter is
          Add_To_Compilation_Buffer (Compile_Comma'Access);
       end if;
    exception
-      when Not_Found =>
+      when Word_Not_Found =>
          begin
             Add_To_Compilation_Buffer (Parse_Number (W));
          exception
             when Constraint_Error =>
-               Raise_Not_Found (W);
+               Raise_Word_Not_Found (W);
          end;
    end Postpone;
 
@@ -1515,7 +1513,7 @@ package body Forth.Interpreter is
                return;
             when End_Error =>
                return;
-            when NF : Not_Found =>
+            when NF : Word_Not_Found =>
                Put_Line ("*** Word not found: " & Exception_Message (NF));
             when Stack_Overflow =>
                Put_Line ("*** Stack overflow");
@@ -1544,14 +1542,14 @@ package body Forth.Interpreter is
       Push (Last_Element (Return_Stack));
    end R_At;
 
-   ---------------------
-   -- Raise_Not_Found --
-   ---------------------
+   --------------------------
+   -- Raise_Word_Not_Found --
+   --------------------------
 
-   procedure Raise_Not_Found (Word : String) is
+   procedure Raise_Word_Not_Found (Word : String) is
    begin
-      raise Not_Found with Word;
-   end Raise_Not_Found;
+      raise Word_Not_Found with Word;
+   end Raise_Word_Not_Found;
 
    -------------
    -- Recurse --
