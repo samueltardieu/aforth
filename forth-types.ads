@@ -13,4 +13,7 @@ package Forth.Types is
    Unbalanced_Control_Structure : exception;
    Word_Not_Found               : exception;
 
+   procedure Raise_Word_Not_Found (Word : String);
+   pragma No_Return (Raise_Word_Not_Found);
+
 end Forth.Types;

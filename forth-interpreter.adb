@@ -32,9 +32,6 @@ package body Forth.Interpreter is
    procedure Register (Name   : String;
                        Action : Action_Type);
 
-   procedure Raise_Word_Not_Found (Word : String);
-   pragma No_Return (Raise_Word_Not_Found);
-
    function Find (Name : String) return Action_Type;
    --  May raise Word_Not_Found
 
@@ -1504,15 +1501,6 @@ package body Forth.Interpreter is
    begin
       Push (Peek (Return_Stack));
    end R_At;
-
-   --------------------------
-   -- Raise_Word_Not_Found --
-   --------------------------
-
-   procedure Raise_Word_Not_Found (Word : String) is
-   begin
-      raise Word_Not_Found with Word;
-   end Raise_Word_Not_Found;
 
    -------------
    -- Recurse --
