@@ -1,12 +1,9 @@
 with Ada.Characters.Handling;    use Ada.Characters.Handling;
-with Ada.Containers.Vectors;
 with Ada.Exceptions;             use Ada.Exceptions;
 with Ada.Real_Time;              use Ada.Real_Time;
-with Ada.Strings.Unbounded;      use Ada.Strings.Unbounded;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with Forth_Builtins;
-with Forth.Stacks;               use Forth.Stacks;
 with Readline;
 
 package body Forth.Interpreter is
@@ -14,33 +11,11 @@ package body Forth.Interpreter is
    --  Notes:
    --    - the compilation stack is the data stack
 
-   type Action_Kind is (Ada_Word, Forth_Word, Number);
-
-   type Action_Type (Kind : Action_Kind := Number) is record
-      Immediate : Boolean;
-      case Kind is
-         when Ada_Word =>
-            Ada_Proc   : Ada_Word_Access;
-         when Forth_Word =>
-            Forth_Proc : Cell;
-            Inline     : Boolean;
-         when Number =>
-            Value      : Cell;
-      end case;
-   end record;
-
    procedure Register (Name   : String;
                        Action : Action_Type);
 
    function Find (Name : String) return Action_Type;
    --  May raise Word_Not_Found
-
-   subtype Natural_Cell is Cell range 1 .. Cell'Last;
-   package Compilation_Buffers is
-      new Ada.Containers.Vectors (Natural_Cell, Action_Type);
-   use Compilation_Buffers;
-
-   Compilation_Buffer : Compilation_Buffers.Vector;
 
    procedure Add_To_Compilation_Buffer (Action : Action_Type);
 
@@ -49,23 +24,6 @@ package body Forth.Interpreter is
 
    package Cell_IO is new Ada.Text_IO.Integer_IO (Cell);
    use Cell_IO;
-
-   type Dictionary_Entry is record
-      Name   : Unbounded_String;
-      Action : Action_Type;
-   end record;
-
-   package Dictionaries is
-     new Ada.Containers.Vectors (Positive, Dictionary_Entry);
-   use Dictionaries;
-
-   Dict : Dictionaries.Vector;
-
-   type Byte_Array is array (Cell range <>) of aliased Unsigned_8;
-
-   Memory : Byte_Array (0 .. 65535) := (others => 0);
-
-   type Byte_Access is access all Unsigned_8;
 
    pragma Warnings (Off);
    function To_Cell_Access is
@@ -81,31 +39,10 @@ package body Forth.Interpreter is
    function To_Integer_64 is
       new Ada.Unchecked_Conversion (Unsigned_64, Integer_64);
 
-   package Stacks is
-      new Ada.Containers.Vectors (Positive, Cell);
-   use Stacks;
-   Data_Stack   : constant Stack_Type := New_Stack;
-   Return_Stack : constant Stack_Type := New_Stack;
-
-   Here      : Cell_Access;
-   Base      : Cell_Access;
-   TIB       : Cell;
-   TIB_Count : Cell_Access;
-   IN_Ptr    : Cell_Access;
-   State     : Cell_Access;
-
-   TIB_Length : constant := 1024;
-
    Forth_Exit : constant Action_Type := (Kind       => Forth_Word,
                                          Immediate  => True,
                                          Inline     => False,
                                          Forth_Proc => -1);
-
-   Stack_Marker       : constant   := -1;
-   Forward_Reference  : constant   := -100;
-   Backward_Reference : constant   := -101;
-   Do_Loop_Reference  : constant   := -102;
-   Definition_Reference : constant := -103;
 
    procedure Remember_Variable
      (Name : String;
@@ -114,13 +51,6 @@ package body Forth.Interpreter is
    procedure Remember_Variable
      (Name : String;
       Var  : out Cell);
-
-   Current_Name   : Unbounded_String;
-   Current_Action : Action_Type (Forth_Word);
-   Current_IP     : Cell := -1;
-
-   Use_RL         : Boolean := True;
-   --  Should the current input method use Read_Line?
 
    procedure Start_Definition (Name : String := "");
 

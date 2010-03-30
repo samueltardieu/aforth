@@ -1,5 +1,8 @@
-with Forth.Types; use Forth.Types;
-with Interfaces;  use Interfaces;
+with Ada.Containers.Vectors;
+with Ada.Strings.Unbounded;  use Ada.Strings.Unbounded;
+with Forth.Stacks;
+with Forth.Types;            use Forth.Types;
+with Interfaces;             use Interfaces;
 
 generic package Forth.Interpreter is
 
@@ -8,6 +11,8 @@ generic package Forth.Interpreter is
    type Cell_Access is access all Cell;
    type Ada_Word_Access is access procedure;
    --  Those two types have to be declared inside the generic package
+
+   type Interpreter_Type is private;
 
    procedure Push (X : Cell);
    procedure Push_Unsigned (X : Unsigned_32);
@@ -152,5 +157,94 @@ generic package Forth.Interpreter is
    procedure Unused;
    procedure Word;
    procedure Words;
+
+private
+
+   use Forth.Stacks;
+
+   type Action_Kind is (Ada_Word, Forth_Word, Number);
+
+   type Action_Type (Kind : Action_Kind := Number) is record
+      Immediate : Boolean;
+      case Kind is
+         when Ada_Word =>
+            Ada_Proc   : Ada_Word_Access;
+         when Forth_Word =>
+            Forth_Proc : Cell;
+            Inline     : Boolean;
+         when Number =>
+            Value      : Cell;
+      end case;
+   end record;
+
+   subtype Natural_Cell is Cell range 1 .. Cell'Last;
+   package Compilation_Buffers is
+      new Ada.Containers.Vectors (Natural_Cell, Action_Type);
+   use Compilation_Buffers;
+
+   Compilation_Buffer : Compilation_Buffers.Vector;
+
+   type Dictionary_Entry is record
+      Name   : Unbounded_String;
+      Action : Action_Type;
+   end record;
+
+   package Dictionaries is
+     new Ada.Containers.Vectors (Positive, Dictionary_Entry);
+   use Dictionaries;
+
+   Dict : Dictionaries.Vector;
+
+   type Byte_Array is array (Cell range <>) of aliased Unsigned_8;
+
+   Memory : Byte_Array (0 .. 65535) := (others => 0);
+
+   type Byte_Access is access all Unsigned_8;
+
+   package Stacks is
+      new Ada.Containers.Vectors (Positive, Cell);
+   use Stacks;
+   Data_Stack   : constant Stack_Type := New_Stack;
+   Return_Stack : constant Stack_Type := New_Stack;
+
+   Here      : Cell_Access;
+   Base      : Cell_Access;
+   TIB       : Cell;
+   TIB_Count : Cell_Access;
+   IN_Ptr    : Cell_Access;
+   State     : Cell_Access;
+
+   TIB_Length : constant := 1024;
+
+   Stack_Marker       : constant   := -1;
+   Forward_Reference  : constant   := -100;
+   Backward_Reference : constant   := -101;
+   Do_Loop_Reference  : constant   := -102;
+   Definition_Reference : constant := -103;
+
+   Current_Name   : Unbounded_String;
+   Current_Action : Action_Type (Forth_Word);
+   Current_IP     : Cell := -1;
+
+   Use_RL         : Boolean := True;
+   --  Should the current input method use Read_Line?
+
+   type Interpreter_Type is record
+      Data_Stack         : Stack_Type := New_Stack;
+      Return_Stack       : Stack_Type := New_Stack;
+      Compilation_Buffer : Compilation_Buffers.Vector;
+      Dict               : Dictionaries.Vector;
+      Memory             : Byte_Array (0 .. 65535);
+      Here               : Cell_Access;
+      Base               : Cell_Access;
+      TIB                : Cell;
+      TIB_Count          : Cell_Access;
+      IN_Ptr             : Cell_Access;
+      State              : Cell_Access;
+      Current_Name       : Unbounded_String;
+      Current_Action     : Action_Type (Forth_Word);
+      Current_IP         : Cell := -1;
+      Use_RL             : Boolean := True;
+   end record;
 
 end Forth.Interpreter;
