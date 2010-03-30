@@ -1,6 +1,6 @@
 with Interfaces; use Interfaces;
 
-generic package Forth_Interpreter is
+generic package Forth.Interpreter is
 
    pragma Elaborate_Body;
 
@@ -162,4 +162,4 @@ generic package Forth_Interpreter is
    procedure Word;
    procedure Words;
 
-end Forth_Interpreter;
+end Forth.Interpreter;

@@ -1,3 +1,3 @@
-with Forth_Interpreter;
+with Forth.Interpreter;
 
-package Aforth is new Forth_Interpreter;
+package Aforth is new Forth.Interpreter;

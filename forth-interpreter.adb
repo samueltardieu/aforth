@@ -8,7 +8,7 @@ with Ada.Unchecked_Conversion;
 with Forth_Builtins;
 with Readline;
 
-package body Forth_Interpreter is
+package body Forth.Interpreter is
 
    --  Notes:
    --    - the compilation stack is the data stack
@@ -2274,4 +2274,4 @@ begin
    end loop;
 
    Readline.Variable_Bind ("completion-ignore-case", "on");
-end Forth_Interpreter;
+end Forth.Interpreter;
