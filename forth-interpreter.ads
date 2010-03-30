@@ -1,15 +1,13 @@
-with Interfaces; use Interfaces;
+with Forth.Types; use Forth.Types;
+with Interfaces;  use Interfaces;
 
 generic package Forth.Interpreter is
 
    pragma Elaborate_Body;
 
-   type Cell is new Integer_32;
-
-   type Cell_Array is array (Positive range <>) of Cell;
-
-   Stack_Overflow  : exception;
-   Stack_Underflow : exception;
+   type Cell_Access is access all Cell;
+   type Ada_Word_Access is access procedure;
+   --  Those two types have to be declared inside the generic package
 
    procedure Push (X : Cell);
    procedure Push_Unsigned (X : Unsigned_32);
@@ -21,8 +19,6 @@ generic package Forth.Interpreter is
    function Pop_64 return Integer_64;
    function Pop_Unsigned_64 return Unsigned_64;
    --  Shortcut operating on Data_Stack
-
-   type Cell_Access is access all Cell;
 
    procedure Make_And_Remember_Variable
      (Name          : String;
@@ -45,8 +41,6 @@ generic package Forth.Interpreter is
       Size          : Cell := 4;
       Initial_Value : Cell := 0);
 
-   type Ada_Word_Access is access procedure;
-
    procedure Register_Ada_Word
      (Name      : String;
       Word      : Ada_Word_Access;
@@ -63,9 +57,6 @@ generic package Forth.Interpreter is
    --  or Bye_Exception if the "BYE" word is used while reading the file.
 
    procedure Interpret_Line (Line : String);
-
-   Compile_Only                 : exception;
-   Unbalanced_Control_Structure : exception;
 
    --  Predefined Ada words
    procedure Again;
