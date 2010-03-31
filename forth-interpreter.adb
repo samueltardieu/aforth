@@ -840,7 +840,8 @@ package body Forth.Interpreter is
 
    procedure Initialize (I : IT) is
    begin
-      --  Store and register HERE at position 0 -- bootstrap STATE at position 4
+      --  Store and register HERE at position 0
+      --  Bootstrap STATE at position 4
       pragma Warnings (Off);
       I.State := To_Cell_Access (I.Memory (4)'Access);
       pragma Warnings (On);
