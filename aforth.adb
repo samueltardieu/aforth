@@ -29,13 +29,28 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Command_Line;   use Ada.Command_Line;
+with Ada.Command_Line;    use Ada.Command_Line;
 with Ada.IO_Exceptions;
-with Forth.Interpreter;  use Forth.Interpreter;
-with Forth.Types;        use Forth.Types;
+with Forth.Interpreter;   use Forth.Interpreter;
+with Forth.Types;         use Forth.Types;
+with Readline.Completion;
 
 procedure Aforth is
+
    Interpreter : Interpreter_Type := New_Interpreter;
+
+   procedure Cleanup;
+
+   -------------
+   -- Cleanup --
+   -------------
+
+   procedure Cleanup is
+   begin
+      Free_Interpreter (Interpreter);
+      Readline.Completion.Clear_All_Words;
+   end Cleanup;
+
 begin
    for I in 1 .. Argument_Count loop
       Include_File (Interpreter, Argument (I));
@@ -43,8 +58,8 @@ begin
    Quit (Interpreter);
 exception
    when Ada.IO_Exceptions.Name_Error =>
-      Free_Interpreter (Interpreter);
+      Cleanup;
       Set_Exit_Status (1);
    when Bye_Exception =>
-      Free_Interpreter (Interpreter);
+      Cleanup;
 end Aforth;
