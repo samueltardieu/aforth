@@ -4,7 +4,8 @@ with Ada.Real_Time;              use Ada.Real_Time;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with Forth.Builtins;
-with Readline;
+with Readline.Completion;
+with Readline.Variables;
 
 package body Forth.Interpreter is
 
@@ -956,7 +957,7 @@ package body Forth.Interpreter is
          Interpret_Line (I, Forth.Builtins.Builtins (J) .all);
       end loop;
 
-      Readline.Variable_Bind ("completion-ignore-case", "on");
+      Readline.Variables.Variable_Bind ("completion-ignore-case", "on");
    end Initialize;
 
    --------------
@@ -1654,7 +1655,7 @@ package body Forth.Interpreter is
    begin
       Append (I.Dict, (Name   => To_Unbounded_String (Name),
                        Action => Action));
-      Readline.Add_Word (Name);
+      Readline.Completion.Add_Word (Name);
    end Register;
 
    -----------------------
