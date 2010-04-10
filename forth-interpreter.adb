@@ -1276,9 +1276,14 @@ package body Forth.Interpreter is
    -- New_Interpreter --
    ---------------------
 
-   function New_Interpreter (Memory_Size : Cell := 65536) return IT is
+   function New_Interpreter
+     (Memory_Size : Cell := 65536;
+      Stack_Size  : Cell := 256)
+     return IT is
    begin
       return I : constant IT := new Interpreter_Body (Memory_Size - 1) do
+         New_Stack (I.Data_Stack, Stack_Size);
+         New_Stack (I.Return_Stack, Stack_Size);
          Initialize (I);
       end return;
    end New_Interpreter;
@@ -1602,6 +1607,8 @@ package body Forth.Interpreter is
                return;
             when NF : Word_Not_Found =>
                Put_Line ("*** Word not found: " & Exception_Message (NF));
+            when Stack_Overflow =>
+               Put_Line ("*** Stack overflow");
             when Stack_Underflow =>
                Put_Line ("*** Stack underflow");
             when CO : Compile_Only =>

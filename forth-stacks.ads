@@ -36,10 +36,10 @@ package Forth.Stacks is
 
    pragma Preelaborate;
 
-   type Stack_Type is private;
+   type Stack_Type is limited private;
    --  The stack elements go from 1 to Length (Stack)
 
-   function New_Stack return Stack_Type;
+   procedure New_Stack (Stack : out Stack_Type; Stack_Size : Cell);
    --  Create a new empty stack
 
    procedure Push (S : Stack_Type; X : Cell);
@@ -77,6 +77,9 @@ private
    package Stacks is
       new Ada.Containers.Vectors (Positive, Cell);
 
-   type Stack_Type is not null access Stacks.Vector;
+   type Stack_Type is record
+      Data : access Stacks.Vector;
+      Size : Cell;
+   end record;
 
 end Forth.Stacks;

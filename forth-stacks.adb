@@ -31,13 +31,28 @@
 
 package body Forth.Stacks is
 
+   procedure Check_For_Room (S : Stack_Type);
+   --  Check that there is still room to insert an element in the stack.
+   --  If there is not, raise Stack_Overflow.
+
+   --------------------
+   -- Check_For_Room --
+   --------------------
+
+   procedure Check_For_Room (S : Stack_Type) is
+   begin
+      if Cell (Length (S) + 1) > S.Size then
+         raise Stack_Overflow;
+      end if;
+   end Check_For_Room;
+
    -----------
    -- Clear --
    -----------
 
    procedure Clear (S : Stack_Type) is
    begin
-      S.Clear;
+      S.Data.Clear;
    end Clear;
 
    ------------
@@ -49,7 +64,7 @@ package body Forth.Stacks is
       if Length (S) < I then
          raise Stack_Underflow;
       end if;
-      S.Delete (I);
+      S.Data.Delete (I);
    end Delete;
 
    -----------------
@@ -58,10 +73,10 @@ package body Forth.Stacks is
 
    procedure Delete_Last (S : Stack_Type) is
    begin
-      if S.Is_Empty then
+      if S.Data.Is_Empty then
          raise Stack_Underflow;
       end if;
-      S.Delete_Last;
+      S.Data.Delete_Last;
    end Delete_Last;
 
    -------------
@@ -73,7 +88,7 @@ package body Forth.Stacks is
       if Length (S) < I then
          raise Stack_Underflow;
       end if;
-      return S.Element (I);
+      return S.Data.Element (I);
    end Element;
 
    ------------
@@ -85,7 +100,8 @@ package body Forth.Stacks is
       if Length (S) < I then
          raise Stack_Underflow;
       end if;
-      S.Insert (I, C);
+      Check_For_Room (S);
+      S.Data.Insert (I, C);
    end Insert;
 
    --------------
@@ -94,7 +110,7 @@ package body Forth.Stacks is
 
    function Is_Empty (S : Stack_Type) return Boolean is
    begin
-      return S.Is_Empty;
+      return S.Data.Is_Empty;
    end Is_Empty;
 
    ------------
@@ -103,16 +119,17 @@ package body Forth.Stacks is
 
    function Length (S : Stack_Type) return Natural is
    begin
-      return Natural (S.Length);
+      return Natural (S.Data.Length);
    end Length;
 
    ---------------
    -- New_Stack --
    ---------------
 
-   function New_Stack return Stack_Type is
+   procedure New_Stack (Stack : out Stack_Type; Stack_Size : Cell) is
    begin
-      return new Stacks.Vector;
+      Stack.Data := new Stacks.Vector;
+      Stack.Size := Stack_Size;
    end New_Stack;
 
    ----------
@@ -121,10 +138,10 @@ package body Forth.Stacks is
 
    function Peek (S : Stack_Type) return Cell is
    begin
-      if S.Is_Empty then
+      if S.Data.Is_Empty then
          raise Stack_Underflow;
       end if;
-      return S.Last_Element;
+      return S.Data.Last_Element;
    end Peek;
 
    ---------
@@ -133,12 +150,12 @@ package body Forth.Stacks is
 
    function Pop (S : Stack_Type) return Cell is
    begin
-      if S.Is_Empty then
+      if S.Data.Is_Empty then
          raise Stack_Underflow;
       end if;
       return Result : Cell do
-         Result := S.Last_Element;
-         S.Delete_Last;
+         Result := S.Data.Last_Element;
+         S.Data.Delete_Last;
       end return;
    end Pop;
 
@@ -148,7 +165,8 @@ package body Forth.Stacks is
 
    procedure Push (S : Stack_Type; X : Cell) is
    begin
-      S.Append (X);
+      Check_For_Room (S);
+      S.Data.Append (X);
    end Push;
 
 end Forth.Stacks;

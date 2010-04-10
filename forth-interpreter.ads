@@ -49,7 +49,12 @@ package Forth.Interpreter is
 
    type Ada_Word_Access is access procedure (I : IT);
 
-   function New_Interpreter (Memory_Size : Cell := 65536) return IT;
+   function New_Interpreter
+     (Memory_Size : Cell := 65536;
+      Stack_Size  : Cell := 256)
+     return IT;
+   --  Memory size is in bytes, stack size is in cells. Both data and return
+   --  stacks are bounded to avoid runaway memory exhaustion.
 
    procedure Push (I : IT; X : Cell);
    procedure Push_Unsigned (I : IT; X : Unsigned_32);
@@ -234,8 +239,8 @@ private
    type Byte_Access is access all Unsigned_8;
 
    type Interpreter_Body (Last_Address : Cell) is record
-      Data_Stack         : Stack_Type := New_Stack;
-      Return_Stack       : Stack_Type := New_Stack;
+      Data_Stack         : Stack_Type;
+      Return_Stack       : Stack_Type;
       Compilation_Buffer : Compilation_Buffers.Vector;
       Dict               : Dictionaries.Vector;
       Memory             : Byte_Array (0 .. Last_Address);
