@@ -2,7 +2,7 @@ with "areadline";
 
 project Aforth is
 
-  for Main use ("test_aforth");
+  for Main use ("aforth");
 
   package Builder is
     for Default_Switches ("Ada") use ("-g");

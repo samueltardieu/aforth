@@ -2,7 +2,7 @@
 --                                                                          --
 --                            AFORTH COMPONENTS                             --
 --                                                                          --
---                          T E S T _ A F O R T H                           --
+--                               A F O R T H                                --
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
@@ -34,7 +34,7 @@ with Ada.IO_Exceptions;
 with Forth.Interpreter;  use Forth.Interpreter;
 with Forth.Types;        use Forth.Types;
 
-procedure Test_Aforth is
+procedure Aforth is
    Interpreter : constant Interpreter_Type := New_Interpreter;
 begin
    for I in 1 .. Argument_Count loop
@@ -46,4 +46,4 @@ exception
       Set_Exit_Status (1);
    when Bye_Exception =>
       return;
-end Test_Aforth;
+end Aforth;

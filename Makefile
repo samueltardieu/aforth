@@ -2,7 +2,7 @@ GNATMAKE ?= gnatmake
 GNATCFLAGS = -aP../areadline
 PYTHON ?= python
 
-PROGRAMS = test_aforth
+PROGRAMS = aforth
 
 all:: $(PROGRAMS)
 
@@ -15,7 +15,7 @@ install:: $(PROGRAMS)
 forth-builtins.ads: builtins.fs embed.py
 	$(PYTHON) embed.py $< Forth.Builtins
 
-test_aforth: never forth-builtins.ads
+aforth: never forth-builtins.ads
 	$(GNATMAKE) $(GNATCFLAGS) -Paforth
 
 clean:: never
