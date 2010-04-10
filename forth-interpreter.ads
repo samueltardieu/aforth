@@ -49,7 +49,7 @@ package Forth.Interpreter is
 
    type Ada_Word_Access is access procedure (I : IT);
 
-   function New_Interpreter return IT;
+   function New_Interpreter (Memory_Size : Cell := 65536) return IT;
 
    procedure Push (I : IT; X : Cell);
    procedure Push_Unsigned (I : IT; X : Unsigned_32);
@@ -233,12 +233,12 @@ private
 
    type Byte_Access is access all Unsigned_8;
 
-   type Interpreter_Body is record
+   type Interpreter_Body (Last_Address : Cell) is record
       Data_Stack         : Stack_Type := New_Stack;
       Return_Stack       : Stack_Type := New_Stack;
       Compilation_Buffer : Compilation_Buffers.Vector;
       Dict               : Dictionaries.Vector;
-      Memory             : Byte_Array (0 .. 65535);
+      Memory             : Byte_Array (0 .. Last_Address);
       Here               : Cell_Access;
       Base               : Cell_Access;
       TIB                : Cell;

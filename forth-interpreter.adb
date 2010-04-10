@@ -1276,9 +1276,9 @@ package body Forth.Interpreter is
    -- New_Interpreter --
    ---------------------
 
-   function New_Interpreter return IT is
+   function New_Interpreter (Memory_Size : Cell := 65536) return IT is
    begin
-      return I : constant IT := new Interpreter_Body do
+      return I : constant IT := new Interpreter_Body (Memory_Size - 1) do
          Initialize (I);
       end return;
    end New_Interpreter;
