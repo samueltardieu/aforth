@@ -38,7 +38,7 @@ echo -n "Testing $testname... "
 (cat ../$testfile; echo) > commands
 
 sed -ne 's/^.*\\ \(.*\)/\1/p' < commands | filter > expected
-../../test_aforth < commands | filter > output 2> errors
+../../aforth < commands | filter > output 2> errors
 if [ $? -ne 0 ] ; then
   fail "bad exit code $?"
 fi
