@@ -34,6 +34,7 @@ with Ada.Exceptions;             use Ada.Exceptions;
 with Ada.Real_Time;              use Ada.Real_Time;
 with Ada.Text_IO;                use Ada.Text_IO;
 with Ada.Unchecked_Conversion;
+with Ada.Unchecked_Deallocation;
 with Forth.Builtins;
 with Readline.Completion;
 with Readline.Variables;
@@ -796,6 +797,17 @@ package body Forth.Interpreter is
    begin
       Push_Unsigned (I, Pop_Unsigned (I) xor Pop_Unsigned (I));
    end Forth_Xor;
+
+   ----------------------
+   -- Free_Interpreter --
+   ----------------------
+
+   procedure Free_Interpreter (I : in out IT) is
+      procedure Free is
+         new Ada.Unchecked_Deallocation (Interpreter_Body, Interpreter_Type);
+   begin
+      Free (I);
+   end Free_Interpreter;
 
    ------------
    -- From_R --

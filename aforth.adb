@@ -35,7 +35,7 @@ with Forth.Interpreter;  use Forth.Interpreter;
 with Forth.Types;        use Forth.Types;
 
 procedure Aforth is
-   Interpreter : constant Interpreter_Type := New_Interpreter;
+   Interpreter : Interpreter_Type := New_Interpreter;
 begin
    for I in 1 .. Argument_Count loop
       Include_File (Interpreter, Argument (I));
@@ -43,7 +43,8 @@ begin
    Quit (Interpreter);
 exception
    when Ada.IO_Exceptions.Name_Error =>
+      Free_Interpreter (Interpreter);
       Set_Exit_Status (1);
    when Bye_Exception =>
-      return;
+      Free_Interpreter (Interpreter);
 end Aforth;

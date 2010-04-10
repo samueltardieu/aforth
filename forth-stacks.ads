@@ -30,6 +30,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Containers.Vectors;
+with Ada.Finalization;
 with Forth.Types;            use Forth.Types;
 
 package Forth.Stacks is
@@ -77,9 +78,13 @@ private
    package Stacks is
       new Ada.Containers.Vectors (Positive, Cell);
 
-   type Stack_Type is record
-      Data : access Stacks.Vector;
+   type Stack_Access is access Stacks.Vector;
+
+   type Stack_Type is new Ada.Finalization.Limited_Controlled with record
+      Data : Stack_Access;
       Size : Cell;
    end record;
+
+   procedure Finalize (Stack : in out Stack_Type);
 
 end Forth.Stacks;

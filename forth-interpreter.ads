@@ -56,6 +56,10 @@ package Forth.Interpreter is
    --  Memory size is in bytes, stack size is in cells. Both data and return
    --  stacks are bounded to avoid runaway memory exhaustion.
 
+   procedure Free_Interpreter (I : in out IT);
+   --  Reclaim the memory used by the interpreter. After this call, the
+   --  interpreter cannot be used anymore.
+
    procedure Push (I : IT; X : Cell);
    procedure Push_Unsigned (I : IT; X : Unsigned_32);
    procedure Push_Unsigned_64 (I : IT; X : Unsigned_64);
@@ -256,6 +260,6 @@ private
       Use_RL             : Boolean := True;
    end record;
 
-   type Interpreter_Type is not null access Interpreter_Body;
+   type Interpreter_Type is access Interpreter_Body;
 
 end Forth.Interpreter;

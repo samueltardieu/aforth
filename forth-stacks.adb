@@ -29,6 +29,8 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Ada.Unchecked_Deallocation;
+
 package body Forth.Stacks is
 
    procedure Check_For_Room (S : Stack_Type);
@@ -90,6 +92,17 @@ package body Forth.Stacks is
       end if;
       return S.Data.Element (I);
    end Element;
+
+   --------------
+   -- Finalize --
+   --------------
+
+   procedure Finalize (Stack : in out Stack_Type) is
+      procedure Free is
+         new Ada.Unchecked_Deallocation (Stacks.Vector, Stack_Access);
+   begin
+      Free (Stack.Data);
+   end Finalize;
 
    ------------
    -- Insert --
