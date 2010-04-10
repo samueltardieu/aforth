@@ -220,7 +220,7 @@ private
             Ada_Proc   : Ada_Word_Access;
          when Forth_Word =>
             Forth_Proc : Cell;
-            Inline     : Boolean;
+            Inline     : Boolean := False;
          when Number =>
             Value      : Cell;
       end case;
