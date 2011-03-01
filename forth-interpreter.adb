@@ -589,7 +589,7 @@ package body Forth.Interpreter is
    begin
       Push (I.Return_Stack, I.Current_IP);
       I.Current_IP := Addr;
-      loop
+      while not I.Interrupt loop
          declare
             Current_Action : constant Action_Type :=
               Element (I.Compilation_Buffer, I.Current_IP);
@@ -1018,7 +1018,7 @@ package body Forth.Interpreter is
 
    procedure Interpret (I : IT) is
    begin
-      loop
+      while not I.Interrupt loop
          declare
             W : constant String := Word (I);
             A : Action_Type;
@@ -1079,6 +1079,7 @@ package body Forth.Interpreter is
         I.Memory (I.TIB .. I.TIB + TIB_Length - 1);
       Saved_Ptr     : constant Cell := I.IN_Ptr.all;
    begin
+      I.Interrupt := False;
       Refill_Line (I, Line);
       Interpret (I);
       I.Memory (I.TIB .. I.TIB + TIB_Length - 1) := Saved_Content;
@@ -1094,6 +1095,15 @@ package body Forth.Interpreter is
    begin
       I.State.all := 0;
    end Interpret_Mode;
+
+   ---------------
+   -- Interrupt --
+   ---------------
+
+   procedure Interrupt (I : IT) is
+   begin
+      I.Interrupt := True;
+   end Interrupt;
 
    -------
    -- J --

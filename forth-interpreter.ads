@@ -112,6 +112,8 @@ package Forth.Interpreter is
 
    procedure Interpret_Line (I : IT; Line : String);
 
+   procedure Interrupt (I : IT);
+
    --  Predefined Ada words
    procedure Again (I : IT);
    procedure Ahead (I : IT);
@@ -258,6 +260,7 @@ private
       Current_Action     : Action_Type (Forth_Word);
       Current_IP         : Cell := -1;
       Use_RL             : Boolean := True;
+      Interrupt          : Boolean := False;
    end record;
 
    type Interpreter_Type is access Interpreter_Body;
