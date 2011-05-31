@@ -4,6 +4,10 @@
 #
 
 import sys
+try:
+    from functools import reduce  # Python 3 needs this
+except:
+    pass
 
 try: ada = sys.argv[2]
 except IndexError: ada = sys.argv[1][:-3].capitalize()
