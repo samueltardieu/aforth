@@ -1437,7 +1437,7 @@ package body Forth.Interpreter is
    procedure Pick (I : IT) is
       How_Deep : constant Integer := Integer (Pop (I));
    begin
-      if How_Deep >= Natural (Length (I.Data_Stack)) then
+      if How_Deep >= Length (I.Data_Stack) then
          raise Stack_Underflow;
       end if;
       Push (I, Element (I.Data_Stack, Length (I.Data_Stack) - How_Deep));
