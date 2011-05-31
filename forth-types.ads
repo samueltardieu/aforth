@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---          Copyright (C) 2006-2010 Samuel Tardieu <sam@rfc1149.net>        --
+--          Copyright (C) 2006-2011 Samuel Tardieu <sam@rfc1149.net>        --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
