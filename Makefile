@@ -1,5 +1,5 @@
 GNATMAKE ?= gnatmake
-GNATCFLAGS = -aP../areadline
+GNATCFLAGS = -aPareadline
 PYTHON ?= python
 
 PROGRAMS = aforth
@@ -25,7 +25,7 @@ clean:: never
 never::
 
 check-syntax::
-	gcc -I../areadline -S -o /dev/null -gnatwa -gnaty $(CHK_SOURCES) 2>&1 | \
+	gcc -Iareadline -S -o /dev/null -gnatwa -gnaty $(CHK_SOURCES) 2>&1 | \
 	grep -v 'file name does not match unit name' >&2 || true
 
 check: all

@@ -1,0 +1,4 @@
+[submodule "areadline"]
+	path = areadline
+	url = https://github.com/samueltardieu/areadline.git
+	branch = master
