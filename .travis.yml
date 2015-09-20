@@ -1,5 +1,7 @@
 language: c
-install:
-  - sudo apt-get -qq update
-  - sudo apt-get install gnat
+sudo: false
+addons:
+  apt:
+    packages:
+      - gnat
 script: make check
